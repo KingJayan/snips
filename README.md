@@ -1,5 +1,5 @@
 <div align="center">
-  <h2><code>KingJayan/code-snippet-library</code></h2>
+  <h2><code>KingJayan/snips</code></h2>
   <p>minimal, fast personal (and shared) code snippet vault.</p>
 </div>
 
