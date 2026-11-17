@@ -1,27 +1,28 @@
 <div align="center">
-  <h2><code>KingJayan/snips</code></h2>
-  <p>minimal, fast personal (and shared) code snippet vault.</p>
+  <h2><code>snips</code></h2>
+  <p>minimal, fast, personal (and shared) code snippet vault.</p>
 </div>
 
 ## features
 
-- organize + pin snippets  
-- public sharing + `/public` discovery  
-- fast tag search + themes
-- magic link auth  
+- organize your code snippets
+- public sharing + `/public` discovery
+- fast tag search, themes
+- magic link auth
 
-- AI assistant (improve, refactor, debug, explain)  
-- optional AI search, auto-tags, docs  
+- AI assistant (improve, refactor, debug, explain)
+- optional AI search, auto-tags, docs
 
-- built-in runner (`py`, `cpp`, `txt`, `md`)  
-- stats, metadata + flexible copy modes  
+- built-in runner/preview (`py`, `cpp`, `md`, WIP: `html`, `css`, + `js`)
+- stats, metadata + flexible copy modes
 
 ## stack
 
-next.js • typescript • tailwind • shadcn/ui  
-supabase (postgres + auth)  
-shiki • codemirror  
-ai: openai • anthropic • gemini • ollama • openrouter  
+next.js • typescript • tailwind • shadcn/ui
+supabase (postgres + auth)
+shiki • codemirror
+
+providers: openai • anthropic • gemini • ollama • openrouter  
 
 ## preview
 
@@ -34,7 +35,7 @@ explorer
 ai panel  
 ![AI edits panel](docs/screenshots/ai-edits-panel.png)
 
-## setup
+## local setup
 
 ```bash
 npm install
