@@ -26,7 +26,7 @@ export async function GET() {
       return NextResponse.json({ ok: true, db: "not-configured" });
     }
 
-    const { data, error } = await client.from("snippets").select("id").limit(1);
+    const { error } = await client.from("snippets").select("id").limit(1);
     if (error) {
       return NextResponse.json({ ok: true, db: "query-error", error: error.message });
     }

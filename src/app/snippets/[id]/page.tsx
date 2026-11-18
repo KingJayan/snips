@@ -39,8 +39,8 @@ import {
   updateSnippet,
 } from "@/lib/snippet-service";
 import { formatSnippetForCopy, type SnippetCopyMode } from "@/lib/copy-modes";
-import { isAiSimilarityEnabled, rankSimilarSnippets, type SimilarSnippetResult } from "@/lib/ai/client-tools";
-import { readBoolSetting, SETTINGS_KEYS } from "@/lib/settings";
+import { rankSimilarSnippets, type SimilarSnippetResult } from "@/lib/ai/client-tools";
+import { SETTINGS_KEYS, useBoolSetting } from "@/lib/settings";
 import { timeAgo } from "@/lib/time";
 import { renderMarkdown as renderMarkdownDescription } from "@/lib/utils";
 import type { SnippetDraft, SnippetWithTags } from "@/lib/types";
@@ -103,17 +103,16 @@ export default function SnippetDetailPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastTone, setToastTone] = useState<ToastTone>("info");
   const [aiCodeOverride, setAiCodeOverride] = useState<string | null>(null);
-  const [aiChatMinimized, setAiChatMinimized] = useState(false);
-  const [renderAiChat, setRenderAiChat] = useState(true);
-  const [similarityEnabled, setSimilarityEnabled] = useState(false);
+  const aiPanelOpenByDefault = useBoolSetting(SETTINGS_KEYS.aiPanelOpenByDefault, true);
+  const [aiChatOverride, setAiChatMinimized] = useState<boolean | null>(null);
+  const aiChatMinimized = aiChatOverride ?? !aiPanelOpenByDefault;
+  const [settledMinimized, setSettledMinimized] = useState(aiChatMinimized);
+  const renderAiChat = !aiChatMinimized || !settledMinimized;
+  const similarityEnabled = useBoolSetting(SETTINGS_KEYS.aiSimilaritySearch);
   const [similarityLoading, setSimilarityLoading] = useState(false);
   const [similarityError, setSimilarityError] = useState<string | null>(null);
   const [similarSnippets, setSimilarSnippets] = useState<SimilarSnippetResult[]>([]);
-  const [vimShortcutsEnabled, setVimShortcutsEnabled] = useState(false);
-  const [executionStats, setExecutionStats] = useState<{
-    runtimeMs: number | null;
-    memoryKb: number | null;
-  } | null>(null);
+  const vimShortcutsEnabled = useBoolSetting(SETTINGS_KEYS.vimShortcuts);
   const [copyMode, setCopyMode] = useState<SnippetCopyMode>("raw");
   const countedViewRef = useRef<string | null>(null);
 
@@ -138,10 +137,12 @@ export default function SnippetDetailPage() {
       });
 
       await navigator.clipboard.writeText(text);
-      void incrementSnippetCounter(snippet.id, "copy");
-      setSnippet((current) =>
-        current ? { ...current, copy_count: current.copy_count + 1 } : current
-      );
+      void incrementSnippetCounter(snippet.id, "copy").then(({ data: counted }) => {
+        if (!counted) return;
+        setSnippet((current) =>
+          current ? { ...current, copy_count: current.copy_count + 1 } : current
+        );
+      });
       setCopyState("done");
       showToast(`copied (${copyMode})`, "success");
       setTimeout(() => setCopyState("idle"), 1200);
@@ -191,17 +192,15 @@ export default function SnippetDetailPage() {
 
   useEffect(() => {
     const cached = readCachedSnippet(snippetId);
-    if (cached) {
-      queueMicrotask(() => {
+    const controller = new AbortController();
+    queueMicrotask(() => {
+      if (controller.signal.aborted) return;
+      if (cached) {
         setSnippet(cached);
         setLoading(false);
-      });
-      void load(undefined, true);
-      return;
-    }
-
-    const controller = new AbortController();
-    void load(controller.signal, false);
+      }
+      void load(controller.signal, Boolean(cached));
+    });
     return () => controller.abort();
   }, [load, snippetId]);
 
@@ -210,10 +209,12 @@ export default function SnippetDetailPage() {
     if (countedViewRef.current === snippet.id) return;
 
     countedViewRef.current = snippet.id;
-    setSnippet((current) =>
-      current ? { ...current, view_count: current.view_count + 1 } : current
-    );
-    void incrementSnippetCounter(snippet.id, "view");
+    void incrementSnippetCounter(snippet.id, "view").then(({ data: counted }) => {
+      if (!counted) return;
+      setSnippet((current) =>
+        current ? { ...current, view_count: current.view_count + 1 } : current
+      );
+    });
   }, [snippet]);
 
   useEffect(() => {
@@ -282,40 +283,17 @@ export default function SnippetDetailPage() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [copyCode, showToast, snippet, vimShortcutsEnabled, editingMode]);
+  }, [copyCode, showToast, snippet, vimShortcutsEnabled, editingMode, startEditing]);
 
   useEffect(() => {
-    if (!aiChatMinimized) {
-      setRenderAiChat(true);
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setRenderAiChat(false);
-    }, 240);
-
+    const timeout = window.setTimeout(() => setSettledMinimized(aiChatMinimized), aiChatMinimized ? 240 : 0);
     return () => window.clearTimeout(timeout);
   }, [aiChatMinimized]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    setSimilarityEnabled(isAiSimilarityEnabled());
-    setVimShortcutsEnabled(readBoolSetting(SETTINGS_KEYS.vimShortcuts, false));
-    const aiPanelOpen = readBoolSetting(SETTINGS_KEYS.aiPanelOpenByDefault, true);
-    setAiChatMinimized(!aiPanelOpen);
-    setRenderAiChat(aiPanelOpen);
-
-    function onSettingsChange() {
-      setSimilarityEnabled(isAiSimilarityEnabled());
-      setVimShortcutsEnabled(readBoolSetting(SETTINGS_KEYS.vimShortcuts, false));
-
-      const openByDefault = readBoolSetting(SETTINGS_KEYS.aiPanelOpenByDefault, true);
-      if (openByDefault) {
-        setRenderAiChat(true);
-        setAiChatMinimized(false);
-      } else {
-        setAiChatMinimized(true);
+    function onSettingsChange(event: Event) {
+      if ((event as CustomEvent<{ key?: string }>).detail?.key === SETTINGS_KEYS.aiPanelOpenByDefault) {
+        setAiChatMinimized(null);
       }
     }
 
@@ -888,12 +866,6 @@ export default function SnippetDetailPage() {
               <Badge variant="outline" className="text-[10px]">{`lines ${snippet.benchmark_lines ?? 0}`}</Badge>
               <Badge variant="outline" className="text-[10px]">{`views ${snippet.view_count}`}</Badge>
               <Badge variant="outline" className="text-[10px]">{`copies ${snippet.copy_count}`}</Badge>
-              {executionStats?.runtimeMs !== null && executionStats?.runtimeMs !== undefined && (
-                <Badge variant="outline" className="text-[10px]">{`runtime ${executionStats.runtimeMs}ms`}</Badge>
-              )}
-              {executionStats?.memoryKb !== null && executionStats?.memoryKb !== undefined && (
-                <Badge variant="outline" className="text-[10px]">{`memory ${executionStats.memoryKb}kb`}</Badge>
-              )}
               {snippet.tags.map((tag) => (
                 <Badge key={tag.id} variant="outline" className="max-w-32 truncate" title={tag.name.length > 20 ? tag.name : undefined}>
                   {tag.name}
@@ -923,7 +895,6 @@ export default function SnippetDetailPage() {
                 size="sm"
                 className="transition-all duration-200 ease-out"
                 onClick={() => {
-                  setRenderAiChat(true);
                   setAiChatMinimized(false);
                 }}
               >

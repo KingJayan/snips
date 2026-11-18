@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useEffect, useState } from "react";
+import { useCallback, useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
@@ -79,6 +79,9 @@ function SceneContent({ cardCount }: { cardCount: number }) {
   const mouseRef = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
   const cards = useMemo(() => generateCards(cardCount), [cardCount]);
   const groupRefs = useRef<(THREE.Group | null)[]>([]);
+  const registerGroup = useCallback((index: number, group: THREE.Group | null) => {
+    groupRefs.current[index] = group;
+  }, []);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -102,7 +105,7 @@ function SceneContent({ cardCount }: { cardCount: number }) {
           {...card}
           mouseRef={mouseRef}
           cardIndex={i}
-          sharedGroupRefs={groupRefs}
+          registerGroup={registerGroup}
         />
       ))}
 

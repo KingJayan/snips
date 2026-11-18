@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Copy, Loader2, Palette } from "lucide-react";
 
 import { LANGUAGES } from "@/lib/constants";
-import { emitSettingsChanged, readBoolSetting, SETTINGS_KEYS } from "@/lib/settings";
+import { SETTINGS_KEYS, useBoolSetting, useStringSetting, writeStringSetting } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 
 const HIGHLIGHT_CACHE = new Map<string, string>();
@@ -38,24 +38,8 @@ const THEMES = [
 
 type Theme = typeof THEMES[number]["value"];
 
-function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "github-dark";
-  try {
-    const stored = localStorage.getItem("code-theme");
-    const isValid = THEMES.some((t) => t.value === stored);
-    return isValid ? (stored as Theme) : "github-dark";
-  } catch {
-    return "github-dark";
-  }
-}
-
-function setStoredTheme(theme: Theme) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem("code-theme", theme);
-  } catch {
-    return;
-  }
+function toTheme(value: string): Theme {
+  return THEMES.some((t) => t.value === value) ? (value as Theme) : "github-dark";
 }
 
 function cacheKeyFor(code: string, language: string, theme: string) {
@@ -71,18 +55,12 @@ type CodeBlockProps = {
 };
 
 export function CodeBlock({ code, language, className }: CodeBlockProps) {
-	const [html, setHtml] = useState<string | null>(null);
-	const [error, setError] = useState<string | null>(null);
+	const [result, setResult] = useState<{ key: string; html: string | null; error: string | null } | null>(null);
 	const [copyState, setCopyState] = useState<"idle" | "done" | "failed">("idle");
-	const [theme, setTheme] = useState<Theme>("github-dark");
+	const theme = toTheme(useStringSetting(SETTINGS_KEYS.codeTheme, "github-dark"));
 	const [showThemes, setShowThemes] = useState(false);
-	const [wrapLines, setWrapLines] = useState(false);
+	const wrapLines = useBoolSetting(SETTINGS_KEYS.wrapCodeLines);
 	const [copyResetTimer, setCopyResetTimer] = useState<number | null>(null);
-
-	useEffect(() => {
-		setTheme(getStoredTheme());
-		setWrapLines(readBoolSetting(SETTINGS_KEYS.wrapCodeLines));
-	}, []);
 
 	useEffect(() => {
 		return () => {
@@ -91,26 +69,6 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
 			}
 		};
 	}, [copyResetTimer]);
-
-	useEffect(() => {
-		function handleSettingsChange(event: Event) {
-			const customEvent = event as CustomEvent<{ key?: string; value?: string }>;
-			if (customEvent.detail?.key === SETTINGS_KEYS.wrapCodeLines) {
-				setWrapLines(customEvent.detail.value === "1");
-			}
-
-			if (customEvent.detail?.key === SETTINGS_KEYS.codeTheme && customEvent.detail.value) {
-				const next = customEvent.detail.value as Theme;
-				const isValid = THEMES.some((themeOption) => themeOption.value === next);
-				if (isValid) {
-					setTheme(next);
-				}
-			}
-		}
-
-		window.addEventListener("snips-settings-changed", handleSettingsChange as EventListener);
-		return () => window.removeEventListener("snips-settings-changed", handleSettingsChange as EventListener);
-	}, []);
 
 	useEffect(() => {
 		if (!showThemes) return;
@@ -133,41 +91,24 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
 
 	const cacheKey = useMemo(() => cacheKeyFor(code, shikiLanguage, theme), [code, shikiLanguage, theme]);
 
+	const cachedHtml = HIGHLIGHT_CACHE.get(cacheKey) ?? null;
+	const current = result?.key === cacheKey ? result : null;
+	const html = cachedHtml ?? current?.html ?? null;
+	const error = cachedHtml ? null : current?.error ?? null;
+
 	useEffect(() => {
+		if (HIGHLIGHT_CACHE.has(cacheKey)) return;
 		let cancelled = false;
 
-		const cached = HIGHLIGHT_CACHE.get(cacheKey);
-		if (cached) {
-			setError(null);
-			setHtml(cached);
-			return () => {
-				cancelled = true;
-			};
-		}
-
-		async function highlight() {
-			setError(null);
-			setHtml(null);
-
-			try {
-				const { codeToHtml } = await import("shiki");
-				const output = await codeToHtml(code, {
-					lang: shikiLanguage,
-					theme: theme,
-				});
-
-				if (!cancelled) {
-					setHighlightCache(cacheKey, output);
-					setHtml(output);
-				}
-			} catch {
-				if (!cancelled) {
-					setError("highlight unavailable. showing plain code.");
-				}
-			}
-		}
-
-		void highlight();
+		void import("shiki")
+			.then(({ codeToHtml }) => codeToHtml(code, { lang: shikiLanguage, theme }))
+			.then((output) => {
+				setHighlightCache(cacheKey, output);
+				if (!cancelled) setResult({ key: cacheKey, html: output, error: null });
+			})
+			.catch(() => {
+				if (!cancelled) setResult({ key: cacheKey, html: null, error: "highlight unavailable. showing plain code." });
+			});
 
 		return () => {
 			cancelled = true;
@@ -175,9 +116,7 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
 	}, [cacheKey, code, shikiLanguage, theme]);
 
 	function changeTheme(newTheme: Theme) {
-		setTheme(newTheme);
-		setStoredTheme(newTheme);
-		emitSettingsChanged(SETTINGS_KEYS.codeTheme, newTheme);
+		writeStringSetting(SETTINGS_KEYS.codeTheme, newTheme);
 		setShowThemes(false);
 	}
 

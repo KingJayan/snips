@@ -63,12 +63,12 @@ export default function PublicSnippetPage() {
     if (countedViewRef.current === snippet.id) return;
 
     countedViewRef.current = snippet.id;
-    queueMicrotask(() => {
+    void incrementSnippetCounter(snippet.id, "view").then(({ data: counted }) => {
+      if (!counted) return;
       setSnippet((current) =>
         current ? { ...current, view_count: current.view_count + 1 } : current
       );
     });
-    void incrementSnippetCounter(snippet.id, "view");
   }, [snippet]);
 
   async function copyCode() {
@@ -82,10 +82,12 @@ export default function PublicSnippetPage() {
       });
 
       await navigator.clipboard.writeText(text);
-      void incrementSnippetCounter(snippet.id, "copy");
-      setSnippet((current) =>
-        current ? { ...current, copy_count: current.copy_count + 1 } : current
-      );
+      void incrementSnippetCounter(snippet.id, "copy").then(({ data: counted }) => {
+        if (!counted) return;
+        setSnippet((current) =>
+          current ? { ...current, copy_count: current.copy_count + 1 } : current
+        );
+      });
       setCopyState("done");
       setTimeout(() => setCopyState("idle"), 1200);
     } catch {

@@ -6,6 +6,11 @@ import * as THREE from "three";
 
 const COUNT = 260;
 
+function seeded(n: number) {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 type Props = { mouseRef: { current: { x: number; y: number } } };
 
 export function ParticleField({ mouseRef }: Props) {
@@ -14,9 +19,9 @@ export function ParticleField({ mouseRef }: Props) {
   const geometry = useMemo(() => {
     const positions = new Float32Array(COUNT * 3);
     for (let i = 0; i < COUNT; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 28;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 16;
-      positions[i * 3 + 2] = -(Math.random() * 30);
+      positions[i * 3] = (seeded(i * 3) - 0.5) * 28;
+      positions[i * 3 + 1] = (seeded(i * 3 + 1) - 0.5) * 16;
+      positions[i * 3 + 2] = -(seeded(i * 3 + 2) * 30);
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(positions, 3));

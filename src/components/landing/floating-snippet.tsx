@@ -25,7 +25,7 @@ type Props = {
   baseOpacity: number;
   mouseRef: { current: { x: number; y: number } };
   cardIndex: number;
-  sharedGroupRefs: { current: (THREE.Group | null)[] };
+  registerGroup: (index: number, group: THREE.Group | null) => void;
 };
 
 export function FloatingSnippet({
@@ -35,7 +35,7 @@ export function FloatingSnippet({
   baseOpacity,
   mouseRef,
   cardIndex,
-  sharedGroupRefs,
+  registerGroup,
 }: Props) {
   const groupRef = useRef<THREE.Group>(null!);
   const divRef = useRef<HTMLDivElement>(null);
@@ -121,7 +121,7 @@ export function FloatingSnippet({
       <group
           ref={(el) => {
             groupRef.current = el!;
-            sharedGroupRefs.current[cardIndex] = el;
+            registerGroup(cardIndex, el);
           }}
           position={position}
           rotation={rotation}

@@ -241,6 +241,35 @@ function extractCodeBlock(text: string): string | null {
   return null;
 }
 
+function readStoredChatConfig() {
+  const fallback = {
+    provider: "openai" as ProviderId,
+    model: "gpt-5-mini",
+    mode: "improve" as ChatMode,
+    useCustomModel: false,
+    apiKey: "",
+    baseUrl: "",
+  };
+
+  try {
+    const storedProvider = localStorage.getItem(STORAGE_KEYS.provider);
+    const provider = PROVIDERS.find((entry) => entry.id === storedProvider)?.id ?? "openai";
+    const model = localStorage.getItem(STORAGE_KEYS.model) || getProviderById(provider).placeholderModel;
+    const storedMode = readStringSetting(SETTINGS_KEYS.aiDefaultMode, "improve") as ChatMode;
+
+    return {
+      provider,
+      model,
+      mode: MODE_VALUES.includes(storedMode) ? storedMode : "improve",
+      useCustomModel: !(PROVIDER_MODELS[provider] ?? []).includes(model),
+      apiKey: sessionStorage.getItem(SESSION_KEYS.apiKey) || "",
+      baseUrl: localStorage.getItem(STORAGE_KEYS.baseUrl) || "",
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 type AiChatSidebarProps = {
   snippet: SnippetWithTags;
   onApplyCode: (code: string) => void;
@@ -249,12 +278,13 @@ type AiChatSidebarProps = {
 
 export function AiChatSidebar({ snippet, onApplyCode, onMinimize }: AiChatSidebarProps) {
   const pathname = usePathname();
-  const [provider, setProvider] = useState<ProviderId>("openai");
-  const [model, setModel] = useState("gpt-5-mini");
-  const [mode, setMode] = useState<ChatMode>("improve");
-  const [useCustomModel, setUseCustomModel] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-  const [baseUrl, setBaseUrl] = useState("");
+  const [stored] = useState(readStoredChatConfig);
+  const [provider, setProvider] = useState<ProviderId>(stored.provider);
+  const [model, setModel] = useState(stored.model);
+  const [mode, setMode] = useState<ChatMode>(stored.mode);
+  const [useCustomModel, setUseCustomModel] = useState(stored.useCustomModel);
+  const [apiKey, setApiKey] = useState(stored.apiKey);
+  const [baseUrl, setBaseUrl] = useState(stored.baseUrl);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -271,23 +301,7 @@ export function AiChatSidebar({ snippet, onApplyCode, onMinimize }: AiChatSideba
 
   useEffect(() => {
     try {
-      const storedProvider = localStorage.getItem(STORAGE_KEYS.provider) as ProviderId | null;
-      const selectedProvider = storedProvider && PROVIDERS.some((entry) => entry.id === storedProvider)
-        ? storedProvider
-        : "openai";
-      const selectedProviderDetails = getProviderById(selectedProvider);
-      const selectedProviderModels = PROVIDER_MODELS[selectedProvider] ?? [];
-      const storedModel = localStorage.getItem(STORAGE_KEYS.model) || selectedProviderDetails.placeholderModel;
-      const modelIsPreset = selectedProviderModels.includes(storedModel);
-
-      setProvider(selectedProvider);
-      setModel(storedModel);
-      setUseCustomModel(!modelIsPreset);
-      const storedMode = readStringSetting(SETTINGS_KEYS.aiDefaultMode, "improve") as ChatMode;
-      setMode(MODE_VALUES.includes(storedMode) ? storedMode : "improve");
       localStorage.removeItem("snips.ai.apiKey");
-      setApiKey(sessionStorage.getItem(SESSION_KEYS.apiKey) || "");
-      setBaseUrl(localStorage.getItem(STORAGE_KEYS.baseUrl) || "");
     } catch {
       return;
     }

@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+
 export const SETTINGS_KEYS = {
   reducedMotion: "snips.a11y.reduced-motion",
   largerText: "snips.a11y.larger-text",
@@ -87,4 +89,21 @@ export function emitSettingsChanged(key: string, value: string) {
       detail: { key, value },
     })
   );
+}
+
+function subscribeSettings(callback: () => void) {
+  window.addEventListener("snips-settings-changed", callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener("snips-settings-changed", callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+export function useBoolSetting(key: string, fallback = false) {
+  return useSyncExternalStore(subscribeSettings, () => readBoolSetting(key, fallback), () => fallback);
+}
+
+export function useStringSetting(key: string, fallback = "") {
+  return useSyncExternalStore(subscribeSettings, () => readStringSetting(key, fallback), () => fallback);
 }

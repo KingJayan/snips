@@ -10,7 +10,7 @@
     "version:sync": "bun scripts/sync-version.mjs",
     "test": "bunx vitest run",
     "test:watch": "bunx vitest",
-    "typecheck": "bunx tsc --noEmit 2>&1 | grep -v 'cannot find type definition file for' || true"
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
