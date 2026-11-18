@@ -313,17 +313,6 @@ export async function getSnippetById(
   }
 }
 
-export async function getSnippetsByIds(ids: string[]): Promise<ServiceResult<SnippetWithTags[]>> {
-  try {
-    if (!ids.length) return { data: [], error: null };
-    const { data, error } = await requireClient().from("snippets").select(SNIPPET_COLUMNS).in("id", ids);
-    if (error) throw new Error(parseSupabaseError(error) ?? "failed to fetch snippets");
-    return { data: data.map(normalizeSnippet) as SnippetWithTags[], error: null };
-  } catch (error) {
-    return withError<SnippetWithTags[]>(error);
-  }
-}
-
 async function saveSnippet(id: string | null, draft: SnippetDraft) {
   const client = requireClient();
   await requireUserId(client);

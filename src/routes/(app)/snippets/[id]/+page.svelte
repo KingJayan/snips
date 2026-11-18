@@ -10,7 +10,6 @@
   import ErrorNote from "#lib/components/ErrorNote.svelte";
   import Loading from "#lib/components/Loading.svelte";
   import NotFound from "#lib/components/NotFound.svelte";
-  import SimilarSnippets from "#lib/components/SimilarSnippets.svelte";
   import SnippetActions from "#lib/components/SnippetActions.svelte";
   import SnippetFields from "#lib/components/SnippetFields.svelte";
   import SnippetMeta from "#lib/components/SnippetMeta.svelte";
@@ -27,7 +26,6 @@
   const CODE_HEIGHT = "h-[50vh] min-h-[280px] sm:h-[56vh] sm:min-h-[360px] lg:h-[62vh] lg:max-h-[780px]";
 
   const aiDefault = boolSetting(SETTINGS_KEYS.aiPanelOpenByDefault, true);
-  const similarity = boolSetting(SETTINGS_KEYS.aiSimilaritySearch);
   const vim = boolSetting(SETTINGS_KEYS.vimShortcuts);
 
   let snippet = $state<SnippetWithTags | null>(null);
@@ -224,8 +222,6 @@
         {:else}
           <CodeBlock code={current.code} language={current.language} class={CODE_HEIGHT} />
         {/if}
-
-        {#if similarity.value}<SimilarSnippets snippet={current} />{/if}
       </div>
 
       {#if !aiMinimized}

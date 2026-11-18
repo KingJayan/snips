@@ -4,7 +4,6 @@ export const SETTINGS_KEYS = {
   reducedMotion: "snips.a11y.reduced-motion",
   largerText: "snips.a11y.larger-text",
   strongerFocus: "snips.a11y.stronger-focus",
-  aiSimilaritySearch: "snips.ai.similarity-search",
   aiDefaultMode: "snips.ai.mode",
   aiPanelOpenByDefault: "snips.pref.ai-panel-open",
   compactLayout: "snips.pref.compact-layout",

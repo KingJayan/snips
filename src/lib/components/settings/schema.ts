@@ -31,7 +31,6 @@ export const GROUPS: Record<Exclude<SettingsGroup, "performance">, SettingItem[]
     hints("show hints"),
   ],
   ai: [
-    { kind: "toggle", key: SETTINGS_KEYS.aiSimilaritySearch, label: "ai similarity search", desc: "find related snippets by code intent (default off)", terms: ["similarity", "ai", "related", "search"] },
     aiPanel("controls default state on snippet detail page"),
     { kind: "select", key: SETTINGS_KEYS.aiDefaultMode, label: "default ai mode", fallback: "improve", options: opts(...CHAT_MODES), terms: ["mode", "default ai mode", ...CHAT_MODES] },
   ],
