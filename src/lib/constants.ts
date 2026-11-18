@@ -22,3 +22,8 @@ export const LANGUAGES: Record<string, { label: string; shiki: string }> = {
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(
   ([value, { label }]) => ({ value, label })
 );
+
+export function languageId(value: string) {
+  const lower = value.trim().toLowerCase();
+  return lower in LANGUAGES ? lower : (LANGUAGE_OPTIONS.find((option) => option.label === lower)?.value ?? lower);
+}

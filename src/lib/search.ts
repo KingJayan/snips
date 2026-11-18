@@ -1,3 +1,4 @@
+import { languageId } from "#lib/constants.ts";
 import type { SnippetSummaryWithTags } from "#lib/types.ts";
 
 export type SearchTokens = {
@@ -38,7 +39,7 @@ export function filterSnippets<T extends SnippetSummaryWithTags>(snippets: T[], 
   return snippets.filter((snippet) => {
     if (pinnedOnly && !snippet.pinned) return false;
     if (tag && !hasTag(snippet, tag)) return false;
-    if (language && snippet.language.toLowerCase() !== language) return false;
+    if (language && languageId(snippet.language) !== languageId(language)) return false;
     if (activeTag && !hasTag(snippet, activeTag)) return false;
     if (!query) return true;
     return [snippet.title, snippet.description, snippet.language, ...snippet.tags.map((t) => t.name)]

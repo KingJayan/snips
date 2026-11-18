@@ -25,6 +25,9 @@ describe("filterSnippets", () => {
   it("filters by text, tag, language and pin", () => {
     expect(filterSnippets(list, "debounce", null)).toHaveLength(1);
     expect(filterSnippets(list, "lang:python", null)[0].title).toBe("retry");
+    expect(filterSnippets(list, "lang:py", null)[0].title).toBe("retry");
+    expect(filterSnippets(list, "lang:ts", null)[0].title).toBe("useDebounce");
+    expect(filterSnippets(list, "lang:typescript", null)).toHaveLength(1);
     expect(filterSnippets(list, "is:pinned", null)[0].title).toBe("useDebounce");
     expect(filterSnippets(list, "", "react")).toHaveLength(1);
   });
