@@ -56,7 +56,11 @@ export class Library {
       return;
     }
 
-    const { data, error } = await listWorkspaces();
+    let { data, error } = await listWorkspaces();
+    if (data && !data.length) {
+      await createWorkspace("default");
+      ({ data, error } = await listWorkspaces());
+    }
     this.error = error;
     this.workspaces = data ?? [];
     const keep = this.workspaces.some((w) => w.id === this.activeId);

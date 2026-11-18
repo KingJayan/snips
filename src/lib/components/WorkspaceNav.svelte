@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-  import { Folder, FolderOpen, PanelLeftClose, PanelLeftOpen } from "@lucide/svelte";
+  import { Ellipsis, Folder, FolderOpen, PanelLeftClose, PanelLeftOpen } from "@lucide/svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import type { Workspace } from "#lib/types.ts";
   import { cn } from "#lib/utils.ts";
@@ -116,7 +116,16 @@
       {/each}
     </div>
 
-    {#if !tiny && actions.length}
+    {#if tiny && actions.length}
+      <button
+        onclick={() => (collapsed = false, actionsOpen = true)}
+        class="mt-2 grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+        aria-label="workspace actions"
+        data-tip="workspace actions"
+      >
+        <Ellipsis class="size-4" />
+      </button>
+    {:else if actions.length}
       <div class="mt-2 w-full">
         <button
           class={cn("flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors", actionsOpen ? "bg-accent/60 text-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground")}

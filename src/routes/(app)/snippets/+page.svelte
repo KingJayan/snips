@@ -185,6 +185,12 @@
             <div class="h-28 animate-pulse rounded-xl border border-border/50 bg-muted/40"></div>
           {/each}
         </section>
+      {:else if !library.activeId}
+        <section class="rounded-2xl border border-dashed border-border/70 p-12 text-center">
+          <h2 class="text-sm font-medium">no workspace yet</h2>
+          <p class="mt-1 text-sm text-muted-foreground">create one to start saving snippets.</p>
+          <Button class="mt-4" onclick={() => (nameDialog = "create")}><Plus class="size-4" /> create workspace</Button>
+        </section>
       {:else if !filtered.length}
         <section class="rounded-2xl border border-dashed border-border/70 p-12 text-center">
           <h2 class="text-sm font-medium">{library.snippets.length ? "no matching snippets" : "no snippets yet"}</h2>
