@@ -33,6 +33,8 @@ type GetSnippetOptions = {
   signal?: AbortSignal;
 };
 
+type SnippetTable = "snippets" | "public_snippets";
+
 function withError<T>(error: unknown): ServiceResult<T> {
   if (
     (error instanceof DOMException && error.name === "AbortError") ||
@@ -279,13 +281,9 @@ function listLimit(options?: ListSnippetsOptions) {
     : MAX_LIST_ITEMS;
 }
 
-async function fetchSnippet(id: string, options?: GetSnippetOptions & { publicOnly?: boolean }) {
+async function fetchSnippet(id: string, options?: GetSnippetOptions & { table?: SnippetTable }) {
   const client = requireClient();
-  let query = client.from("snippets").select(SNIPPET_COLUMNS).eq("id", id);
-
-  if (options?.publicOnly) {
-    query = query.eq("public", true);
-  }
+  let query = client.from(options?.table ?? "snippets").select(SNIPPET_COLUMNS).eq("id", id);
 
   if (options?.signal) {
     query = query.abortSignal(options.signal);
@@ -461,11 +459,14 @@ export async function listPublicSnippets(
     const client = requireClient();
 
     let query = client
-      .from("snippets")
+      .from("public_snippets")
       .select(SUMMARY_COLUMNS)
-      .eq("public", true)
       .order("updated_at", { ascending: false })
       .limit(listLimit(options));
+
+    if (options?.workspaceId) {
+      query = query.eq("workspace_id", options.workspaceId);
+    }
 
     if (options?.signal) {
       query = query.abortSignal(options.signal);
@@ -487,9 +488,20 @@ export async function getPublicSnippetById(
   id: string
 ): Promise<ServiceResult<SnippetWithTags>> {
   try {
-    return { data: await fetchSnippet(id, { publicOnly: true }), error: null };
+    return { data: await fetchSnippet(id, { table: "public_snippets" }), error: null };
   } catch (error) {
     return withError<SnippetWithTags>(error);
+  }
+}
+
+export async function getPublicWorkspaceName(id: string): Promise<ServiceResult<string>> {
+  try {
+    const { data, error } = await requireClient().from("workspaces").select("name").eq("id", id).eq("is_public", true).maybeSingle();
+    if (error) throw new Error(parseSupabaseError(error) ?? "failed to fetch workspace");
+    if (!data) throw new Error("workspace not found or not public");
+    return { data: data.name as string, error: null };
+  } catch (error) {
+    return withError<string>(error);
   }
 }
 

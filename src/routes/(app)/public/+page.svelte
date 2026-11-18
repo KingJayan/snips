@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import AppHeader from "#lib/components/AppHeader.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
   import SnippetCard from "#lib/components/SnippetCard.svelte";
   import TagFilter from "#lib/components/TagFilter.svelte";
   import { collectTags, filterSnippets } from "#lib/search.ts";
-  import { listPublicSnippets } from "#lib/snippet-service.ts";
+  import { getPublicWorkspaceName, listPublicSnippets } from "#lib/snippet-service.ts";
   import { toast } from "#lib/toast.svelte.ts";
   import type { SnippetSummaryWithTags } from "#lib/types.ts";
 
@@ -12,13 +13,20 @@
   let loading = $state(true);
   let search = $state("");
   let activeTag = $state<string | null>(null);
+  let workspaceName = $state<string | null>(null);
+
+  const workspaceId = $derived(page.url.searchParams.get("workspace"));
 
   const filtered = $derived(filterSnippets(snippets, search, activeTag));
   const tags = $derived(collectTags(snippets));
 
   $effect(() => {
     const controller = new AbortController();
-    listPublicSnippets({ signal: controller.signal }).then(({ data, error }) => {
+    const id = workspaceId ?? undefined;
+    loading = true;
+    workspaceName = null;
+    if (id) getPublicWorkspaceName(id).then(({ data }) => !controller.signal.aborted && (workspaceName = data));
+    listPublicSnippets({ signal: controller.signal, workspaceId: id }).then(({ data, error }) => {
       if (controller.signal.aborted) return;
       loading = false;
       if (error) toast(error, "error");
@@ -41,8 +49,10 @@
 
   <main class="mx-auto w-full max-w-4xl flex-1 space-y-4 px-4 py-6 animate-subtle-fade-up sm:px-6">
     <div>
-      <h1 class="text-lg font-semibold tracking-tight">public snippets</h1>
-      <p class="text-xs text-muted-foreground">snippets people have shared</p>
+      <h1 class="text-lg font-semibold tracking-tight">{workspaceId ? (workspaceName ?? "workspace") : "public snippets"}</h1>
+      <p class="text-xs text-muted-foreground">
+        {#if workspaceId}a shared workspace · <a href="/public" class="underline underline-offset-4 hover:text-foreground">all public snippets</a>{:else}snippets people have shared{/if}
+      </p>
     </div>
     <SearchBar bind:value={search} />
     <TagFilter {tags} bind:active={activeTag} />

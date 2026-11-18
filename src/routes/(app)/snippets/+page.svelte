@@ -54,6 +54,7 @@
       { id: "new", label: "new", onClick: () => (nameDialog = "create"), disabled: blocked },
       { id: "rename", label: "rename", onClick: () => (nameDialog = "rename"), disabled: blocked || !library.active },
       { id: "share", label: library.active?.is_public ? "make private" : "make public", onClick: toggleShare, disabled: blocked || !library.active },
+      ...(library.active?.is_public ? [{ id: "link", label: "copy public link", onClick: () => library.activeId && copyWorkspaceLink(library.activeId) }] : []),
       { id: "delete", label: "delete", onClick: () => (deleteDialog = true), disabled: blocked || !library.active || library.workspaces.length <= 1, destructive: true },
     ];
   });
@@ -78,9 +79,18 @@
     if (!library.error) toast("synced", "success");
   }
 
-  function toggleShare() {
-    if (!library.active?.is_public && !confirm("make this workspace public? every snippet in it, including private ones, will be readable by anyone with its link.")) return;
-    void library.toggleShare();
+  function copyWorkspaceLink(id: string) {
+    return navigator.clipboard.writeText(`${location.origin}/public?workspace=${id}`).then(
+      () => toast("public link copied", "success"),
+      () => toast("copy failed", "error")
+    );
+  }
+
+  async function toggleShare() {
+    const workspace = library.active;
+    if (!workspace) return;
+    if (!workspace.is_public && !confirm("make this workspace public? every snippet in it, including private ones, will be readable by anyone.")) return;
+    if (!(await library.toggleShare()) && !workspace.is_public) await copyWorkspaceLink(workspace.id);
   }
 
   async function submitName(name: string) {

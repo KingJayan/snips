@@ -187,6 +187,17 @@ create policy "snippet_tags delete" on public.snippet_tags for delete
   using (exists (select 1 from public.snippets s where s.id = snippet_tags.snippet_id and s.user_id = auth.uid()));
 
 -- ────────────────────────────────────────────
+-- public snippets
+-- ────────────────────────────────────────────
+drop view if exists public.public_snippets;
+create view public.public_snippets with (security_invoker = true) as
+  select s.* from public.snippets s
+  where s.public = true
+    or exists (select 1 from public.workspaces w where w.id = s.workspace_id and w.is_public = true);
+
+grant select on public.public_snippets to anon, authenticated;
+
+-- ────────────────────────────────────────────
 -- atomic snippet save
 -- ────────────────────────────────────────────
 drop function if exists public.save_snippet(uuid, uuid, text, text, text, text, integer, integer, integer, integer, text[]);
