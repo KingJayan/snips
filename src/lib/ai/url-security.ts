@@ -76,7 +76,7 @@ export async function validateAiBaseUrl(rawBaseUrl: string): Promise<ValidationR
   return { ok: true, normalized: `${parsed.protocol}//${parsed.host}${pathname}` };
 }
 
-const publicLookup: LookupFunction = (hostname, options, callback) =>
+export const publicLookup: LookupFunction = (hostname, options, callback) =>
   lookupCallback(hostname, options, (error, address, family) => {
     const addresses = Array.isArray(address) ? address.map((entry) => entry.address) : [address];
     if (!error && addresses.some(isPrivateAddress)) return callback(new Error("blocked private address"), "", 0);

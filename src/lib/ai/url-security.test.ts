@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPrivateAddress, validateAiBaseUrl } from "./url-security";
+import { isPrivateAddress, publicLookup, validateAiBaseUrl } from "./url-security";
 
 describe("validateAiBaseUrl", () => {
   it("accepts public https endpoints", async () => {
@@ -25,5 +25,12 @@ describe("isPrivateAddress", () => {
     expect(isPrivateAddress("fd00::1")).toBe(true);
     expect(isPrivateAddress("1.1.1.1")).toBe(false);
     expect(isPrivateAddress("2606:4700::1111")).toBe(false);
+  });
+});
+
+describe("publicLookup", () => {
+  it("refuses hosts that resolve to private addresses at connect time", async () => {
+    const error = await new Promise((resolve) => publicLookup("localhost", {}, (err) => resolve(err)));
+    expect(error).toBeInstanceOf(Error);
   });
 });
