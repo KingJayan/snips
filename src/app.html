@@ -25,10 +25,6 @@
             "snips.pref.compact-layout": "pref-compact",
           };
           for (var k in flags) if (ls.getItem(k) === "1") root.classList.add(flags[k]);
-          if (ls.getItem("snips.pref.ui-density") === "compact") root.classList.add("pref-density-compact");
-          var anim = ls.getItem("snips.pref.animation-level");
-          if (anim === "reduced") root.classList.add("pref-anim-reduced");
-          if (anim === "minimal") root.classList.add("pref-anim-minimal");
         } catch (e) {}
       })();
     </script>
