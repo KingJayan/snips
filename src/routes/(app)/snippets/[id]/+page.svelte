@@ -19,6 +19,7 @@
   import { readCachedSnippet, writeCachedSnippet } from "#lib/snippet-cache.ts";
   import { toDraft, validateDraft } from "#lib/snippet-draft.ts";
   import { deleteSnippet, getSnippetById, incrementSnippetCounter, togglePinSnippet, togglePublicSnippet, updateSnippet } from "#lib/snippet-service.ts";
+  import { getCurrentUser } from "#lib/supabase.ts";
   import { toast } from "#lib/toast.svelte.ts";
   import type { ServiceResult, SnippetDraft, SnippetWithTags } from "#lib/types.ts";
   import { ignoresShortcuts } from "#lib/utils.ts";
@@ -55,8 +56,9 @@
     refreshing = Boolean(cached);
     editing = null;
 
-    getSnippetById(id, { signal: controller.signal }).then(async ({ data, error: loadError }) => {
+    Promise.all([getSnippetById(id, { signal: controller.signal }), getCurrentUser()]).then(async ([{ data, error: loadError }, user]) => {
       if (controller.signal.aborted) return;
+      if (data && data.user_id !== user?.id) return goto(`/public/${id}`, { replaceState: true });
       loading = refreshing = false;
       error = loadError;
       if (!data) return;

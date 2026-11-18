@@ -38,7 +38,7 @@
   {@const current = snippet}
   <AppHeader />
   <main class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:py-8 motion-safe-enter">
-    <SnippetActions snippet={current} onCopied={() => (current.copy_count += 1)} />
+    <SnippetActions snippet={current} back="/public" onCopied={() => (current.copy_count += 1)} />
     <header class="space-y-3 rounded-2xl border border-border/70 bg-card/70 p-4 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
       <SnippetMeta snippet={current} />
     </header>

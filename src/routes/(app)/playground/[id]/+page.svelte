@@ -6,7 +6,8 @@
   import Loading from "#lib/components/Loading.svelte";
   import NotFound from "#lib/components/NotFound.svelte";
   import SnippetPlayground from "#lib/components/SnippetPlayground.svelte";
-  import { getPublicSnippetById, getSnippetById } from "#lib/snippet-service.ts";
+  import { getSnippetById } from "#lib/snippet-service.ts";
+  import { getCurrentUser } from "#lib/supabase.ts";
   import type { SnippetWithTags } from "#lib/types.ts";
 
   let snippet = $state<SnippetWithTags | null>(null);
@@ -23,17 +24,13 @@
     const id = page.params.id ?? "";
     let active = true;
     loading = true;
-    getSnippetById(id)
-      .then((own) => {
-        owned = Boolean(own.data);
-        return own.data ? own : getPublicSnippetById(id);
-      })
-      .then(({ data, error: loadError }) => {
-        if (!active) return;
-        snippet = data;
-        error = loadError;
-        loading = false;
-      });
+    Promise.all([getSnippetById(id), getCurrentUser()]).then(([{ data, error: loadError }, user]) => {
+      if (!active) return;
+      snippet = data;
+      owned = Boolean(data && data.user_id === user?.id);
+      error = loadError;
+      loading = false;
+    });
     return () => (active = false);
   });
 </script>
