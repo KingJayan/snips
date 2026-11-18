@@ -82,7 +82,7 @@
 
   {#if language === "markdown"}
     <div class="rounded-xl border border-border/70 bg-background/40 p-4">
-      <h3 class="mb-3 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">preview</h3>
+      <h3 class="mb-3 text-xs font-medium text-muted-foreground">preview</h3>
       {#if code.trim()}
         <div class="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert">{@html renderMarkdown(code)}</div>
       {:else}
@@ -99,7 +99,7 @@
       <div class="grid gap-2 lg:grid-cols-2">
         {#each [{ label: "output", text: result?.stdout || "(empty)", tone: "" }, { label: "errors", text: result?.stderr || "(none)", tone: "text-destructive" }] as pane (pane.label)}
           <section class="max-h-96 min-h-28 resize-y overflow-auto rounded-lg border border-border/70 bg-background/70 p-2">
-            <h3 class="mb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{pane.label}</h3>
+            <h3 class="mb-1 text-xs font-medium text-muted-foreground">{pane.label}</h3>
             <pre class="font-mono text-xs break-words whitespace-pre-wrap {pane.tone}">{pane.text}</pre>
           </section>
         {/each}

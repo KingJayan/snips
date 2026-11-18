@@ -40,7 +40,7 @@
 <label class="flex flex-col gap-1.5">
   <div class="flex items-center justify-between">
     <span class="text-xs text-muted-foreground">title</span>
-    <span class="text-[10px] text-muted-foreground">{draft.title.length}/120</span>
+    <span class="text-xs text-muted-foreground">{draft.title.length}/120</span>
   </div>
   <Input bind:value={draft.title} placeholder="title" maxlength={120} {autofocus} />
 </label>
@@ -64,7 +64,7 @@
     <span class="text-xs text-muted-foreground">description</span>
     <div class="flex items-center gap-2">
       {@render aiButton("docs")}
-      <span class="text-[10px] text-muted-foreground">{draft.description.length}/1000</span>
+      <span class="text-xs text-muted-foreground">{draft.description.length}/1000</span>
     </div>
   </div>
   <Textarea bind:value={draft.description} placeholder="short description" class="min-h-20" maxlength={1000} />

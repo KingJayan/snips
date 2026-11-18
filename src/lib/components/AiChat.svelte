@@ -85,17 +85,17 @@
         </Button>
       </div>
     </div>
-    <p class="mt-1 text-[11px] text-muted-foreground">{provider.description}</p>
+    <p class="mt-1 text-xs text-muted-foreground">{provider.description}</p>
   </header>
 
   <div class="space-y-2 border-b border-border/70 p-3">
     <label class="flex flex-col gap-1">
-      <span class="text-[11px] text-muted-foreground">provider</span>
+      <span class="text-xs text-muted-foreground">provider</span>
       <Select value={config.provider} options={PROVIDERS.map((p) => ({ value: p.id, label: p.label }))} onchange={(e) => selectProvider(e.currentTarget.value as ProviderId)} />
     </label>
 
     <label class="flex flex-col gap-1">
-      <span class="text-[11px] text-muted-foreground">model</span>
+      <span class="text-xs text-muted-foreground">model</span>
       <Select value={modelChoice} options={[...provider.models.map((m) => ({ value: m, label: m })), { value: CUSTOM, label: "custom model..." }]} onchange={(e) => selectModel(e.currentTarget.value)} />
       {#if modelChoice === CUSTOM}
         <Input bind:value={config.model} placeholder={provider.models[0]} class="h-8 text-xs" />
@@ -103,26 +103,26 @@
     </label>
 
     <label class="flex flex-col gap-1">
-      <span class="text-[11px] text-muted-foreground">mode</span>
+      <span class="text-xs text-muted-foreground">mode</span>
       <Select bind:value={config.mode} options={CHAT_MODES.map((m) => ({ value: m, label: m }))} />
     </label>
 
     {#if config.provider === "puterjs"}
-      <p class="rounded-md border border-border/70 bg-background/60 px-2 py-1 text-[11px] text-muted-foreground">
+      <p class="rounded-md border border-border/70 bg-background/60 px-2 py-1 text-xs text-muted-foreground">
         puterjs needs a valid puter session; unauthorized browser calls can appear as 401 in devtools.
       </p>
     {/if}
 
     {#if provider.requiresApiKey}
       <label class="flex flex-col gap-1">
-        <span class="flex items-center gap-1 text-[11px] text-muted-foreground"><KeyRound class="size-3" /> api key (tab session only)</span>
+        <span class="flex items-center gap-1 text-xs text-muted-foreground"><KeyRound class="size-3" /> api key (tab session only)</span>
         <Input type="password" bind:value={config.apiKey} placeholder="paste your api key" class="h-8 text-xs" />
       </label>
     {/if}
 
     {#if provider.supportsBaseUrl}
       <label class="flex flex-col gap-1">
-        <span class="text-[11px] text-muted-foreground">base url</span>
+        <span class="text-xs text-muted-foreground">base url</span>
         <Input bind:value={config.baseUrl} placeholder="https://your-host/v1" class="h-8 text-xs" />
       </label>
     {/if}
@@ -132,7 +132,7 @@
     {#each messages as message, index (index)}
       {@const Icon = message.role === "assistant" ? Sparkles : Wand}
       <article class="rounded-lg border px-3 py-2 text-xs leading-relaxed animate-subtle-fade-up {message.role === 'assistant' ? 'border-border/70 bg-background' : 'border-primary/20 bg-primary/5'}">
-        <p class="mb-1 flex items-center gap-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase"><Icon class="size-3" /> {message.role}</p>
+        <p class="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground"><Icon class="size-3" /> {message.role}</p>
         <pre class="font-sans whitespace-pre-wrap">{message.content}</pre>
       </article>
     {:else}
@@ -152,13 +152,13 @@
         }
       }}
     />
-    <ErrorNote message={error} class="px-2 py-1 text-[11px]" />
+    <ErrorNote message={error} class="px-2 py-1 text-xs" />
     <div class="flex items-center gap-2">
       <Button size="sm" class="flex-1" onclick={send} disabled={loading}>
         {#if loading}<LoaderCircle class="size-4 animate-spin" /> thinking...{:else}<Send class="size-4" /> send{/if}
       </Button>
       <Button variant="outline" size="sm" onclick={() => suggestedCode && onApplyCode(suggestedCode)} disabled={!suggestedCode}>apply</Button>
     </div>
-    <p class="text-[10px] text-muted-foreground">cmd/ctrl+enter to send</p>
+    <p class="text-xs text-muted-foreground">cmd/ctrl+enter to send</p>
   </footer>
 </aside>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ArrowUpRight, Globe, Pin, Play, Trash } from "@lucide/svelte";
+  import { Globe, Pin, Play, Trash } from "@lucide/svelte";
   import { timeAgo } from "#lib/time.ts";
   import type { SnippetSummaryWithTags } from "#lib/types.ts";
   import { badgeVariants } from "./ui/variants";
@@ -42,9 +42,7 @@
       <h3 class="truncate text-xs leading-tight font-semibold tracking-tight text-foreground sm:text-sm">
         <a href="{basePath}/{snippet.id}" class="outline-none after:absolute after:inset-0" title={snippet.title}>{snippet.title}</a>
       </h3>
-      {#if snippet.description}
-        <p class="line-clamp-1 text-[11px] text-muted-foreground sm:text-xs">{snippet.description}</p>
-      {/if}
+      <p class="line-clamp-1 text-xs text-muted-foreground">{timeAgo(snippet.updated_at)}{snippet.description ? ` · ${snippet.description}` : ""}</p>
     </div>
 
     <div class="relative z-10 flex shrink-0 items-center gap-1">
@@ -80,18 +78,16 @@
       {#if snippet.public && basePath !== "/public"}
         <span class="p-1 text-muted-foreground" title="public"><Globe class="size-3" /><span class="sr-only">public</span></span>
       {/if}
-      <span class="font-mono text-[10px] text-muted-foreground sm:text-xs">{snippet.language}</span>
+      <span class="font-mono text-xs text-muted-foreground">{snippet.language}</span>
     </div>
   </div>
 
-  <div class="h-px w-full bg-border opacity-40"></div>
-
-  <div class="flex items-center justify-between gap-1 sm:gap-2">
-    <div class="relative z-10 flex min-w-0 flex-1 flex-wrap gap-0.5 sm:gap-1">
+  {#if snippet.tags.length}
+    <div class="relative z-10 flex flex-wrap gap-1">
       {#each snippet.tags.slice(0, 4) as tag (tag.id)}
         <button
           type="button"
-          class={cn(badgeVariants({ variant: "outline" }), "max-w-20 cursor-pointer truncate text-[8px] transition-colors hover:bg-accent sm:max-w-24 sm:text-[10px]")}
+          class={cn(badgeVariants({ variant: "outline" }), "max-w-28 cursor-pointer truncate text-xs transition-colors hover:bg-accent")}
           onclick={() => onTagClick?.(tag.name)}
           aria-label="filter by {tag.name}"
           title={tag.name.length > 20 ? tag.name : undefined}
@@ -100,13 +96,8 @@
         </button>
       {/each}
       {#if snippet.tags.length > 4}
-        <span class="text-[8px] text-muted-foreground sm:text-[10px]">+{snippet.tags.length - 4}</span>
+        <span class="text-xs text-muted-foreground">+{snippet.tags.length - 4}</span>
       {/if}
     </div>
-
-    <div class="flex shrink-0 items-center gap-1">
-      <span class="text-[10px] text-muted-foreground">{timeAgo(snippet.updated_at)}</span>
-      <ArrowUpRight class="size-2.5 text-muted-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 sm:size-3" />
-    </div>
-  </div>
+  {/if}
 </article>
