@@ -1,7 +1,7 @@
 <script lang="ts">
   import { LoaderCircle, Save } from "@lucide/svelte";
   import { on } from "svelte/events";
-  import { toDraft, validateDraft } from "#lib/snippet-draft.ts";
+  import { draftChanged, toDraft, validateDraft } from "#lib/snippet-draft.ts";
   import type { SnippetDraft } from "#lib/types.ts";
   import CodeEditor from "./CodeEditor.svelte";
   import ErrorNote from "./ErrorNote.svelte";
@@ -35,7 +35,7 @@
 
 {#snippet description()}paste code, add metadata, then save with <span class="font-medium">cmd/ctrl+enter</span>{/snippet}
 
-<Dialog bind:open title="new snippet" {description} class="max-h-[92vh] max-w-3xl rounded-2xl border-border/70 sm:max-w-3xl" headerClass="border-b border-border/60 px-5 py-4">
+<Dialog bind:open title="new snippet" {description} canClose={() => !submitting && (!draftChanged(draft, tagsInput) || confirm("discard this snippet?"))} class="max-h-[92vh] max-w-3xl rounded-2xl border-border/70 sm:max-w-3xl" headerClass="border-b border-border/60 px-5 py-4">
   <form
     class="flex min-h-0 flex-1 flex-col"
     onsubmit={(e) => {

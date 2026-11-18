@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Globe, LoaderCircle, Lock, PanelRightOpen, Pencil, Pin, Play, Share2, Trash } from "@lucide/svelte";
   import { fly } from "svelte/transition";
-  import { goto } from "$app/navigation";
+  import { beforeNavigate, goto } from "$app/navigation";
   import { page } from "$app/state";
   import AiChat from "#lib/components/AiChat.svelte";
   import CodeBlock from "#lib/components/CodeBlock.svelte";
@@ -17,7 +17,7 @@
   import Button from "#lib/components/ui/Button.svelte";
   import { boolSetting, SETTINGS_KEYS } from "#lib/settings.ts";
   import { readCachedSnippet, writeCachedSnippet } from "#lib/snippet-cache.ts";
-  import { toDraft, validateDraft } from "#lib/snippet-draft.ts";
+  import { draftChanged, toDraft, validateDraft } from "#lib/snippet-draft.ts";
   import { deleteSnippet, getSnippetById, incrementSnippetCounter, togglePinSnippet, togglePublicSnippet, updateSnippet } from "#lib/snippet-service.ts";
   import { getCurrentUser } from "#lib/supabase.ts";
   import { toast } from "#lib/toast.svelte.ts";
@@ -41,6 +41,15 @@
   let actions = $state<ReturnType<typeof SnippetActions>>();
 
   const aiMinimized = $derived(aiOverride ?? !aiDefault.value);
+  const dirty = $derived(Boolean(editing && snippet && draftChanged(editing.draft, editing.tags, toDraft(snippet))));
+
+  beforeNavigate((navigation) => {
+    if (dirty && navigation.type !== "leave" && !confirm("you have unsaved changes. leave anyway?")) navigation.cancel();
+  });
+
+  function cancelEditing() {
+    if (!dirty || confirm("discard your changes?")) editing = null;
+  }
 
   $effect(() => {
     void aiDefault.value;
@@ -141,7 +150,7 @@
     const key = event.key.toLowerCase();
     if (key === "escape" && editing) {
       event.preventDefault();
-      editing = null;
+      cancelEditing();
       return;
     }
     if (ignoresShortcuts(event.target)) return;
@@ -153,7 +162,7 @@
   }
 </script>
 
-<svelte:window onkeydown={onKeydown} />
+<svelte:window onkeydown={onKeydown} onbeforeunload={(e) => dirty && e.preventDefault()} />
 
 {#if loading}
   <Loading label="loading snippet..." />
@@ -184,7 +193,7 @@
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold tracking-tight text-muted-foreground">editing snippet</span>
           <div class="flex gap-2">
-            <Button variant="outline" size="sm" onclick={() => (editing = null)} disabled={editing.saving}>cancel</Button>
+            <Button variant="outline" size="sm" onclick={cancelEditing} disabled={editing.saving}>cancel</Button>
             <Button size="sm" onclick={save} disabled={editing.saving}>
               {#if editing.saving}<LoaderCircle class="size-4 animate-spin" /> saving...{:else}save{/if}
             </Button>

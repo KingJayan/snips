@@ -29,3 +29,13 @@ export function validateDraft(draft: SnippetDraft, tagsInput: string) {
     ? { data: { ...draft, ...parsed.data } as SnippetDraft, error: null }
     : { data: null, error: parsed.error.issues[0]?.message ?? "invalid snippet data" };
 }
+
+export function draftChanged(draft: SnippetDraft, tagsInput: string, base: SnippetDraft = toDraft()) {
+  return (
+    draft.title !== base.title ||
+    draft.language !== base.language ||
+    draft.description !== base.description ||
+    draft.code !== base.code ||
+    parseTags(tagsInput).join() !== base.tags.join()
+  );
+}

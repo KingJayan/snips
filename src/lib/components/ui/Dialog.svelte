@@ -9,11 +9,14 @@
     description?: string | Snippet;
     class?: string;
     headerClass?: string;
+    canClose?: () => boolean;
     children: Snippet;
   };
 
-  let { open = $bindable(), title, description, class: className, headerClass, children }: Props = $props();
+  let { open = $bindable(), title, description, class: className, headerClass, canClose = () => true, children }: Props = $props();
   let dialog: HTMLDialogElement;
+
+  const close = () => canClose() && (open = false);
 
   $effect(() => {
     if (open && !dialog.open) dialog.showModal();
@@ -28,7 +31,11 @@
     className
   )}
   onclose={() => (open = false)}
-  onclick={(event) => event.target === dialog && (open = false)}
+  oncancel={(event) => {
+    event.preventDefault();
+    close();
+  }}
+  onclick={(event) => event.target === dialog && close()}
 >
   {#if open}
     <div class="flex min-h-0 flex-col">
@@ -45,7 +52,7 @@
     <button
       type="button"
       class="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:outline-hidden"
-      onclick={() => (open = false)}
+      onclick={close}
     >
       <X class="size-4" />
       <span class="sr-only">close</span>
