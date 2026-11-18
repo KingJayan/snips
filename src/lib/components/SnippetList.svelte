@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createVirtualizer } from "@tanstack/svelte-virtual";
+  import { get } from "svelte/store";
   import type { SnippetSummaryWithTags } from "#lib/types.ts";
   import SnippetCard from "./SnippetCard.svelte";
 
@@ -18,10 +19,13 @@
 
   const virtualizer = createVirtualizer<HTMLElement, HTMLDivElement>({ count: 0, getScrollElement: () => scroller, estimateSize: () => 156, overscan: 8 });
 
-  $effect(() => $virtualizer.setOptions({ count: snippets.length }));
+  $effect(() => {
+    const count = snippets.length;
+    get(virtualizer).setOptions({ count });
+  });
 
   $effect(() => {
-    if (selected !== null) $virtualizer.scrollToIndex(selected, { align: "auto" });
+    if (selected !== null) get(virtualizer).scrollToIndex(selected, { align: "auto" });
   });
 </script>
 
