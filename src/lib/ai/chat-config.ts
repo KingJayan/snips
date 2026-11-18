@@ -15,11 +15,11 @@ export type ProviderOption = {
 
 export const PROVIDERS: ProviderOption[] = [
   { id: "openai", label: "OpenAI (GPT / Codex)", description: "Use OpenAI models including GPT and Codex variants.", models: ["gpt-5-mini", "gpt-5", "codex-mini-latest", "gpt-4.1-mini"], requiresApiKey: true, supportsBaseUrl: false },
-  { id: "anthropic", label: "Anthropic (Claude)", description: "Use Anthropic Claude models.", models: ["claude-sonnet-4-5", "claude-3-7-sonnet-latest", "claude-3-5-haiku-latest"], requiresApiKey: true, supportsBaseUrl: false },
-  { id: "gemini", label: "Google Gemini", description: "Use Gemini models from Google AI Studio.", models: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"], requiresApiKey: true, supportsBaseUrl: false },
+  { id: "anthropic", label: "Anthropic (Claude)", description: "Use Anthropic Claude models.", models: ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"], requiresApiKey: true, supportsBaseUrl: false },
+  { id: "gemini", label: "Google Gemini", description: "Use Gemini models from Google AI Studio.", models: ["gemini-pro-latest", "gemini-flash-latest", "gemini-3.5-flash"], requiresApiKey: true, supportsBaseUrl: false },
   { id: "openrouter", label: "OpenRouter (Qwen / Llama / etc)", description: "Access many model families including Qwen and Llama.", models: ["qwen/qwen3-coder", "meta-llama/llama-3.1-70b-instruct", "deepseek/deepseek-r1"], requiresApiKey: true, supportsBaseUrl: false },
   { id: "openai-compatible", label: "OpenAI-Compatible (Custom)", description: "Any endpoint that supports /chat/completions.", models: ["llama-3.1-70b-instruct", "mistral-large-latest", "gpt-4.1-mini"], requiresApiKey: true, supportsBaseUrl: true },
-  { id: "puterjs", label: "PuterJS AI", description: "Use PuterJS browser AI models.", models: ["gpt-4.1-mini", "gpt-4o-mini", "claude-3-5-sonnet"], requiresApiKey: false, supportsBaseUrl: false },
+  { id: "puterjs", label: "PuterJS AI", description: "Use PuterJS browser AI models.", models: ["gpt-4.1-mini", "gpt-4o-mini"], requiresApiKey: false, supportsBaseUrl: false },
 ];
 
 export const CHAT_MODES: ChatMode[] = ["improve", "refactor", "debug", "explain"];

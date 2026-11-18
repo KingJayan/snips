@@ -14,9 +14,7 @@ export async function callAnthropicProvider(params: {
     },
     body: JSON.stringify({
       model: params.body.model,
-      max_tokens: 1500,
-      temperature: 0.1,
-      top_p: 0.9,
+      max_tokens: 16000,
       messages: params.messages
         .filter((message) => message.role !== "system")
         .map((message) => ({
