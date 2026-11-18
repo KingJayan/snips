@@ -3,14 +3,14 @@
   "version": "1.4.8",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "version:sync": "node scripts/sync-version.mjs",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "npx tsc --noEmit 2>&1 | grep -v 'cannot find type definition file for' || true"
+    "dev": "bun --bun next dev",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start",
+    "lint": "bunx eslint",
+    "version:sync": "bun scripts/sync-version.mjs",
+    "test": "bunx vitest run",
+    "test:watch": "bunx vitest",
+    "typecheck": "bunx tsc --noEmit 2>&1 | grep -v 'cannot find type definition file for' || true"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
