@@ -173,7 +173,7 @@
           <Button variant="outline" size="icon" onclick={refresh} disabled={library.loading} aria-label="refresh" tip="refresh">
             <RefreshCw class="size-4 {library.loading || library.refreshing ? 'animate-spin' : ''}" />
           </Button>
-          <Button onclick={() => (snippetDialog = true)} disabled={!canCreate}><Plus class="size-4" /> new snippet</Button>
+          <Button onclick={() => (snippetDialog = true)} disabled={!canCreate} tip={canCreate ? undefined : "create a workspace first"}><Plus class="size-4" /> new snippet</Button>
         </div>
       </header>
 
