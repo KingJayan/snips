@@ -6,23 +6,10 @@ import { validateAiBaseUrl } from "@/lib/ai/url-security";
 import type { ChatMode, ChatRequestBody } from "@/lib/ai/chat-types";
 
 const ALLOWED_MODES: ChatMode[] = ["improve", "refactor", "debug", "explain"];
-const AI_CHAT_WINDOW_MS = 60_000;
+const AI_CHAT_WINDOW_SECONDS = 60;
 const AI_CHAT_MAX_REQUESTS_PER_WINDOW = 24;
 
-type RateWindow = {
-  count: number;
-  windowStart: number;
-};
-
-const aiRateWindows = new Map<string, RateWindow>();
-
-let serverSupabaseClient: ReturnType<typeof createClient> | null = null;
-
-function getServerSupabaseClient() {
-  if (serverSupabaseClient) {
-    return serverSupabaseClient;
-  }
-
+function getUserSupabaseClient(token: string) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
@@ -32,72 +19,43 @@ function getServerSupabaseClient() {
     return null;
   }
 
-  serverSupabaseClient = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
   });
-
-  return serverSupabaseClient;
 }
 
-async function getAuthenticatedUserId(request: Request) {
+async function authenticate(request: Request) {
   const authHeader = request.headers.get("authorization") ?? "";
-  if (!authHeader.toLowerCase().startsWith("bearer ")) {
-    return { userId: null, error: "authorization required" };
-  }
-
-  const token = authHeader.slice(7).trim();
+  const token = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
   if (!token) {
-    return { userId: null, error: "authorization token is missing" };
+    return { client: null, error: "authorization required" };
   }
 
-  const client = getServerSupabaseClient();
+  const client = getUserSupabaseClient(token);
   if (!client) {
-    return { userId: null, error: "supabase auth is not configured" };
+    return { client: null, error: "supabase auth is not configured" };
   }
 
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user) {
-    return { userId: null, error: "invalid or expired session" };
+    return { client: null, error: "invalid or expired session" };
   }
 
-  return { userId: data.user.id, error: null };
+  return { client, error: null };
 }
 
-function getRequesterIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for") ?? "";
-  const firstForwarded = forwarded.split(",")[0]?.trim();
-  if (firstForwarded) {
-    return firstForwarded;
-  }
-
-  return request.headers.get("x-real-ip") ?? "unknown";
-}
-
-function enforceAiRateLimit(rateKey: string) {
-  const now = Date.now();
-  const existing = aiRateWindows.get(rateKey);
-
-  if (!existing || now - existing.windowStart >= AI_CHAT_WINDOW_MS) {
-    aiRateWindows.set(rateKey, { count: 1, windowStart: now });
-    return { allowed: true, retryAfterMs: 0 };
-  }
-
-  if (existing.count >= AI_CHAT_MAX_REQUESTS_PER_WINDOW) {
-    return {
-      allowed: false,
-      retryAfterMs: Math.max(0, AI_CHAT_WINDOW_MS - (now - existing.windowStart)),
-    };
-  }
-
-  aiRateWindows.set(rateKey, {
-    count: existing.count + 1,
-    windowStart: existing.windowStart,
+async function consumeRateLimit(client: NonNullable<ReturnType<typeof getUserSupabaseClient>>) {
+  const { data, error } = await client.rpc("consume_ai_rate_limit", {
+    p_window_seconds: AI_CHAT_WINDOW_SECONDS,
+    p_max: AI_CHAT_MAX_REQUESTS_PER_WINDOW,
   });
 
-  return { allowed: true, retryAfterMs: 0 };
+  if (error || typeof data !== "number") {
+    return { allowed: false, retryAfterSeconds: AI_CHAT_WINDOW_SECONDS };
+  }
+
+  return { allowed: data === 0, retryAfterSeconds: data };
 }
 
 function resolveApiKey(providerId: ChatRequestBody["provider"], requestApiKey?: string) {
@@ -118,24 +76,22 @@ function resolveApiKey(providerId: ChatRequestBody["provider"], requestApiKey?: 
 
 export async function POST(request: Request) {
   try {
-    const auth = await getAuthenticatedUserId(request);
-    if (!auth.userId) {
+    const auth = await authenticate(request);
+    if (!auth.client) {
       return NextResponse.json({ error: auth.error ?? "unauthorized" }, { status: 401 });
     }
 
-    const ip = getRequesterIp(request);
-    const rateKey = `${auth.userId}:${ip}`;
-    const rateLimit = enforceAiRateLimit(rateKey);
+    const rateLimit = await consumeRateLimit(auth.client);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
           error: "rate limit exceeded. please wait before sending another request.",
-          retryAfterMs: rateLimit.retryAfterMs,
+          retryAfterMs: rateLimit.retryAfterSeconds * 1000,
         },
         {
           status: 429,
           headers: {
-            "Retry-After": String(Math.ceil(rateLimit.retryAfterMs / 1000)),
+            "Retry-After": String(rateLimit.retryAfterSeconds),
           },
         }
       );
@@ -175,21 +131,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "api key is required for this provider" }, { status: 400 });
     }
 
-    if (provider.requiresBaseUrl && !body.baseUrl?.trim()) {
-      return NextResponse.json({ error: "base url is required for this provider" }, { status: 400 });
-    }
-
-    let sanitizedBaseUrl = body.baseUrl?.trim() ?? "";
-    if (body.provider === "openai-compatible") {
-      const result = validateAiBaseUrl(sanitizedBaseUrl, "openai-compatible");
-      if (!result.ok) {
-        return NextResponse.json({ error: result.error }, { status: 400 });
-      }
-      sanitizedBaseUrl = result.normalized;
-    }
-
-    if (body.provider === "ollama" && sanitizedBaseUrl) {
-      const result = validateAiBaseUrl(sanitizedBaseUrl, "ollama");
+    let sanitizedBaseUrl = "";
+    if (provider.requiresBaseUrl) {
+      const result = await validateAiBaseUrl(body.baseUrl ?? "");
       if (!result.ok) {
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
@@ -213,8 +157,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ reply: result.reply });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "request failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "request failed" }, { status: 500 });
   }
 }

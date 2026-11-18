@@ -1,4 +1,5 @@
-type BaseUrlValidationMode = "openai-compatible" | "ollama";
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 
 type ValidationResult = {
   ok: true;
@@ -8,41 +9,38 @@ type ValidationResult = {
   error: string;
 };
 
-function isLoopbackHost(hostname: string) {
-  const host = hostname.toLowerCase();
-  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+function isPrivateIpv4(address: string) {
+  const [a, b] = address.split(".").map(Number);
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    a >= 224
+  );
 }
 
-function isPrivateIpv4(hostname: string) {
-  const parts = hostname.split(".");
-  if (parts.length !== 4 || parts.some((part) => !/^\d+$/.test(part))) {
-    return false;
-  }
-
-  const octets = parts.map((part) => Number(part));
-  if (octets.some((value) => Number.isNaN(value) || value < 0 || value > 255)) {
-    return false;
-  }
-
-  if (octets[0] === 10) return true;
-  if (octets[0] === 127) return true;
-  if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return true;
-  if (octets[0] === 192 && octets[1] === 168) return true;
-  if (octets[0] === 169 && octets[1] === 254) return true;
-
-  return false;
+export function isPrivateAddress(address: string) {
+  const host = address.toLowerCase().replace(/^\[|\]$/g, "");
+  const version = isIP(host);
+  if (version === 4) return isPrivateIpv4(host);
+  if (version !== 6) return true;
+  const mapped = host.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mapped) return isPrivateIpv4(mapped[1]);
+  return (
+    host === "::" ||
+    host === "::1" ||
+    host.startsWith("::ffff:") ||
+    /^f[cd]/.test(host) ||
+    /^fe[89ab]/.test(host) ||
+    host.startsWith("ff")
+  );
 }
 
-function isPrivateIpv6(hostname: string) {
-  const host = hostname.toLowerCase();
-  return host === "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:");
-}
-
-function isPrivateHost(hostname: string) {
-  return isLoopbackHost(hostname) || isPrivateIpv4(hostname) || isPrivateIpv6(hostname);
-}
-
-export function validateAiBaseUrl(rawBaseUrl: string, mode: BaseUrlValidationMode): ValidationResult {
+export async function validateAiBaseUrl(rawBaseUrl: string): Promise<ValidationResult> {
   const trimmed = rawBaseUrl.trim();
   if (!trimmed) {
     return { ok: false, error: "base url is required" };
@@ -59,31 +57,19 @@ export function validateAiBaseUrl(rawBaseUrl: string, mode: BaseUrlValidationMod
     return { ok: false, error: "base url must not include credentials" };
   }
 
-  const protocol = parsed.protocol.toLowerCase();
-  const host = parsed.hostname.toLowerCase();
-
-  if (mode === "openai-compatible") {
-    if (protocol !== "https:") {
-      return { ok: false, error: "openai-compatible base url must use https" };
-    }
-
-    if (isPrivateHost(host)) {
-      return { ok: false, error: "openai-compatible base url cannot target private or loopback hosts" };
-    }
+  if (parsed.protocol !== "https:") {
+    return { ok: false, error: "base url must use https" };
   }
 
-  if (mode === "ollama") {
-    if (protocol !== "http:" && protocol !== "https:") {
-      return { ok: false, error: "ollama base url must use http or https" };
-    }
+  const host = parsed.hostname.replace(/^\[|\]$/g, "");
+  const addresses = isIP(host)
+    ? [host]
+    : await lookup(host, { all: true }).then((entries) => entries.map((entry) => entry.address)).catch(() => []);
 
-    const allowRemote = process.env.SNIPS_AI_ALLOW_REMOTE_OLLAMA === "1";
-    if (!allowRemote && !isLoopbackHost(host)) {
-      return { ok: false, error: "ollama base url must be localhost unless SNIPS_AI_ALLOW_REMOTE_OLLAMA=1" };
-    }
+  if (!addresses.length || addresses.some(isPrivateAddress)) {
+    return { ok: false, error: "base url must resolve to a public host" };
   }
 
   const pathname = parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/$/, "");
-  const normalized = `${parsed.protocol}//${parsed.host}${pathname}`;
-  return { ok: true, normalized };
+  return { ok: true, normalized: `${parsed.protocol}//${parsed.host}${pathname}` };
 }

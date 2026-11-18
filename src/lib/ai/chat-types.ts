@@ -9,7 +9,6 @@ export type ChatProvider =
   | "openai"
   | "anthropic"
   | "gemini"
-  | "ollama"
   | "openrouter"
   | "openai-compatible";
 

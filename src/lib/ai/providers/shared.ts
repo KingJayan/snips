@@ -14,10 +14,22 @@ export async function fetchWithTimeout(url: string, init: RequestInit) {
       ...init,
       signal: controller.signal,
       cache: "no-store",
+      redirect: "manual",
     });
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function readProviderResponse(
+  response: Response,
+  parse: (payload: unknown) => string | null
+): Promise<ProviderResult> {
+  if (!response.ok) {
+    return { error: `provider returned ${response.status}`, reply: null };
+  }
+  const payload = await response.json().catch(() => null);
+  return { error: null, reply: parse(payload) };
 }
 
 export function parseOpenAIStyleReply(payload: unknown): string | null {
@@ -52,13 +64,4 @@ export function parseGeminiReply(payload: unknown): string | null {
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
   const text = parts.map((part) => part.text ?? "").join("\n");
   return text && text.trim() ? text : null;
-}
-
-export function parseOllamaReply(payload: unknown): string | null {
-  const data = payload as {
-    message?: { content?: string };
-  };
-
-  const content = data?.message?.content;
-  return typeof content === "string" && content.trim() ? content : null;
 }

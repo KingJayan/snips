@@ -10,7 +10,7 @@ import { readStringSetting, SETTINGS_KEYS } from "@/lib/settings";
 import { supabase } from "@/lib/supabase";
 import type { SnippetWithTags } from "@/lib/types";
 
-type ProviderId = "openai" | "anthropic" | "gemini" | "openrouter" | "ollama" | "openai-compatible" | "puterjs";
+type ProviderId = "openai" | "anthropic" | "gemini" | "openrouter" | "openai-compatible" | "puterjs";
 type ChatMode = "improve" | "refactor" | "debug" | "explain";
 
 declare global {
@@ -74,14 +74,6 @@ const PROVIDERS: ProviderOption[] = [
     description: "Access many model families including Qwen and Llama.",
   },
   {
-    id: "ollama",
-    label: "Ollama (Local)",
-    placeholderModel: "qwen2.5-coder:14b",
-    requiresApiKey: false,
-    supportsBaseUrl: true,
-    description: "Use local models running in Ollama.",
-  },
-  {
     id: "openai-compatible",
     label: "OpenAI-Compatible (Custom)",
     placeholderModel: "llama-3.1-70b-instruct",
@@ -106,7 +98,6 @@ const PROVIDER_MODELS: Record<ProviderId, string[]> = {
   anthropic: ["claude-sonnet-4-5", "claude-3-7-sonnet-latest", "claude-3-5-haiku-latest"],
   gemini: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
   openrouter: ["qwen/qwen3-coder", "meta-llama/llama-3.1-70b-instruct", "deepseek/deepseek-r1"],
-  ollama: ["qwen2.5-coder:14b", "llama3.1:8b", "deepseek-coder:6.7b"],
   "openai-compatible": ["llama-3.1-70b-instruct", "mistral-large-latest", "gpt-4.1-mini"],
   puterjs: ["gpt-4.1-mini", "gpt-4o-mini", "claude-3-5-sonnet"],
 };
@@ -263,7 +254,7 @@ export function AiChatSidebar({ snippet, onApplyCode, onMinimize }: AiChatSideba
   const [mode, setMode] = useState<ChatMode>("improve");
   const [useCustomModel, setUseCustomModel] = useState(false);
   const [apiKey, setApiKey] = useState("");
-  const [baseUrl, setBaseUrl] = useState("http://localhost:11434");
+  const [baseUrl, setBaseUrl] = useState("");
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -296,7 +287,7 @@ export function AiChatSidebar({ snippet, onApplyCode, onMinimize }: AiChatSideba
       setMode(MODE_VALUES.includes(storedMode) ? storedMode : "improve");
       localStorage.removeItem("snips.ai.apiKey");
       setApiKey(sessionStorage.getItem(SESSION_KEYS.apiKey) || "");
-      setBaseUrl(localStorage.getItem(STORAGE_KEYS.baseUrl) || "http://localhost:11434");
+      setBaseUrl(localStorage.getItem(STORAGE_KEYS.baseUrl) || "");
     } catch {
       return;
     }
@@ -580,7 +571,7 @@ export function AiChatSidebar({ snippet, onApplyCode, onMinimize }: AiChatSideba
             <Input
               value={baseUrl}
               onChange={(event) => setBaseUrl(event.target.value)}
-              placeholder={provider === "ollama" ? "http://localhost:11434" : "https://your-host/v1"}
+              placeholder="https://your-host/v1"
               className="h-8 text-xs"
             />
           </label>

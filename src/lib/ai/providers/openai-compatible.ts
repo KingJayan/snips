@@ -1,5 +1,5 @@
 import type { ChatRequestBody, ChatMessage } from "@/lib/ai/chat-types";
-import { fetchWithTimeout, parseOpenAIStyleReply, type ProviderResult } from "@/lib/ai/providers/shared";
+import { fetchWithTimeout, parseOpenAIStyleReply, readProviderResponse, type ProviderResult } from "@/lib/ai/providers/shared";
 
 export async function callOpenAICompatibleProvider(params: {
   body: ChatRequestBody;
@@ -25,13 +25,5 @@ export async function callOpenAICompatibleProvider(params: {
     }),
   });
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message =
-      (payload as { error?: { message?: string } })?.error?.message ??
-      `provider returned ${response.status}`;
-    return { error: message, reply: null };
-  }
-
-  return { error: null, reply: parseOpenAIStyleReply(payload) };
+  return readProviderResponse(response, parseOpenAIStyleReply);
 }

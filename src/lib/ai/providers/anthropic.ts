@@ -1,5 +1,5 @@
 import type { ChatRequestBody, ChatMessage } from "@/lib/ai/chat-types";
-import { fetchWithTimeout, parseAnthropicReply, type ProviderResult } from "@/lib/ai/providers/shared";
+import { fetchWithTimeout, parseAnthropicReply, readProviderResponse, type ProviderResult } from "@/lib/ai/providers/shared";
 
 export async function callAnthropicProvider(params: {
   body: ChatRequestBody;
@@ -27,13 +27,5 @@ export async function callAnthropicProvider(params: {
     }),
   });
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message =
-      (payload as { error?: { message?: string } })?.error?.message ??
-      `provider returned ${response.status}`;
-    return { error: message, reply: null };
-  }
-
-  return { error: null, reply: parseAnthropicReply(payload) };
+  return readProviderResponse(response, parseAnthropicReply);
 }

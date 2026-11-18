@@ -1,6 +1,5 @@
 import { callAnthropicProvider } from "@/lib/ai/providers/anthropic";
 import { callGeminiProvider } from "@/lib/ai/providers/gemini";
-import { callOllamaProvider } from "@/lib/ai/providers/ollama";
 import { callOpenAICompatibleProvider } from "@/lib/ai/providers/openai-compatible";
 import { callOpenAIProvider } from "@/lib/ai/providers/openai";
 import { callOpenRouterProvider } from "@/lib/ai/providers/openrouter";
@@ -54,16 +53,6 @@ export const providers: Record<ChatProvider, ProviderAdapter> = {
       streaming: true,
       systemMessages: true,
       tools: true,
-    },
-  },
-  ollama: {
-    handler: callOllamaProvider,
-    requiresApiKey: false,
-    requiresBaseUrl: false,
-    capabilities: {
-      streaming: true,
-      systemMessages: true,
-      tools: false,
     },
   },
   openrouter: {

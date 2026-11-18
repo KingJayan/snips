@@ -1,5 +1,5 @@
 import type { ChatRequestBody, ChatMessage } from "@/lib/ai/chat-types";
-import { fetchWithTimeout, parseGeminiReply, type ProviderResult } from "@/lib/ai/providers/shared";
+import { fetchWithTimeout, parseGeminiReply, readProviderResponse, type ProviderResult } from "@/lib/ai/providers/shared";
 
 export async function callGeminiProvider(params: {
   body: ChatRequestBody;
@@ -29,13 +29,5 @@ export async function callGeminiProvider(params: {
     }),
   });
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message =
-      (payload as { error?: { message?: string } })?.error?.message ??
-      `provider returned ${response.status}`;
-    return { error: message, reply: null };
-  }
-
-  return { error: null, reply: parseGeminiReply(payload) };
+  return readProviderResponse(response, parseGeminiReply);
 }
