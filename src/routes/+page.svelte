@@ -13,7 +13,7 @@
   });
 </script>
 
-<main class="min-h-svh bg-[#09090b]">
+<main class="min-h-svh bg-background">
   <LandingNav />
 
   <section class="relative h-svh w-full overflow-hidden">
@@ -28,7 +28,7 @@
       {/if}
     </div>
     <HeroOverlay />
-    <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-36 bg-gradient-to-t from-[#09090b] to-transparent"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-36 bg-gradient-to-t from-background to-transparent"></div>
   </section>
 
   <FeaturesStrip />

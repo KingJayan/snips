@@ -49,7 +49,7 @@
 
     if (card) {
       const depth = Math.abs(position[2] - cam.position.z);
-      card.style.opacity = String(Math.min(baseOpacity, Math.max(0.06, 1 - Math.max(0, depth - 13) * 0.08)));
+      card.style.opacity = String(Math.min(baseOpacity, Math.max(0.15, 1 - Math.max(0, depth - 16) * 0.05)));
     }
   });
 
@@ -62,7 +62,7 @@
 
 <Float speed={0.45} rotationIntensity={0.05} floatIntensity={0.12}>
   <T.Group bind:ref={group} {position} {rotation}>
-    <HTML transform scale={0.3} pointerEvents="none" zIndexRange={[16, 0]}>
+    <HTML transform scale={0.38} pointerEvents="none" zIndexRange={[4, 0]}>
       <button
         bind:this={card}
         class="landing-3d-card pointer-events-auto cursor-pointer text-left transition-shadow"

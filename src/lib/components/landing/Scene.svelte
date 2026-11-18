@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { T, useTask, useThrelte } from "@threlte/core";
-  import { Color, type Group, type PerspectiveCamera } from "three";
+  import { T, useTask } from "@threlte/core";
+  import type { Group, PerspectiveCamera } from "three";
   import Constellation from "./Constellation.svelte";
   import FloatingSnippet from "./FloatingSnippet.svelte";
   import Particles from "./Particles.svelte";
@@ -54,10 +54,7 @@
   const cards = $derived(generateCards(count));
   const groups = $state<(Group | undefined)[]>([]);
   const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-  const { scene } = useThrelte();
   let camera = $state<PerspectiveCamera>();
-
-  scene.background = new Color("#09090b");
 
   useTask(() => {
     if (camera) camera.position.z -= 0.0018;
