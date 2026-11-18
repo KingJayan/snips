@@ -1,53 +1,21 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import { getCurrentUser } from "@/lib/supabase";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { HeroOverlay } from "@/components/landing/hero-overlay";
 import { FeaturesStrip } from "@/components/landing/features-strip";
 import { LandingCta } from "@/components/landing/landing-cta";
-
-// Canvas is browser-only — never SSR
-const HeroScene = dynamic(
-  () =>
-    import("@/components/landing/hero-scene").then((m) => ({
-      default: m.HeroScene,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="absolute inset-0" style={{ background: "#09090b" }} />
-    ),
-  }
-);
+import { HeroCanvas } from "@/components/landing/hero-canvas";
+import { SignedInRedirect } from "@/components/landing/signed-in-redirect";
 
 export default function LandingPage() {
-  const router = useRouter();
-  const [authChecked, setAuthChecked] = useState(false);
-
-  useEffect(() => {
-    getCurrentUser().then((user) => {
-      if (user) {
-        router.replace("/snippets");
-      } else {
-        setAuthChecked(true);
-      }
-    });
-  }, [router]);
-
-  if (!authChecked) return null;
-
   return (
     <main style={{ background: "#09090b", minHeight: "100svh" }}>
+      <SignedInRedirect />
       <LandingNav />
 
       {/* ── Hero ── */}
       <section className="relative h-svh w-full overflow-hidden">
         {/* 3D canvas fills the full section */}
         <div className="absolute inset-0">
-          <HeroScene />
+          <HeroCanvas />
         </div>
 
         {/* Headline + CTA overlaid above the canvas */}

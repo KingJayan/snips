@@ -718,6 +718,12 @@ export default function SnippetsPage() {
 
   async function handleToggleWorkspaceShare() {
     if (!activeWorkspace) return;
+    if (
+      !activeWorkspace.is_public &&
+      !window.confirm("make this workspace public? every snippet in it, including private ones, will be readable by anyone with its link.")
+    ) {
+      return;
+    }
 
     setWorkspaceBusy(true);
     const { error: serviceError } = await toggleWorkspacePublic(activeWorkspace.id, !activeWorkspace.is_public);

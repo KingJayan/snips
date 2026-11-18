@@ -5,8 +5,6 @@ import {
   Accessibility,
   Check,
   ChevronDown,
-  Github,
-  Link,
   Palette,
   Search,
   Settings2,
@@ -108,8 +106,7 @@ type SettingsGroup =
   | "ai"
   | "preferences"
   | "accessibility"
-  | "performance"
-  | "credits";
+  | "performance";
 
 function readInitialA11ySettings(): A11ySettings {
   return {
@@ -521,9 +518,6 @@ function SettingsPanel() {
                 <button type="button" className={navButtonClass("accessibility")} onClick={() => setActiveGroup("accessibility")}>
                   <span className="inline-flex items-center gap-1"><Accessibility className="size-3" /> a11y</span>
                 </button>
-                <button type="button" className={navButtonClass("credits")} onClick={() => setActiveGroup("credits")}>
-                  <span className="inline-flex items-center gap-1"><Link className="size-3" /> credits</span>
-                </button>
               </div>
             </nav>
 
@@ -927,31 +921,12 @@ function SettingsPanel() {
                   )}
                 </section>
               )}
-
-              {activeGroup === "credits" && (
-                <section className="space-y-2">
-                  <div className="rounded-lg border border-border/70 bg-card px-3 py-2">
-                    <p className="text-sm font-medium">made with :)</p>
-                    <p className="text-xs text-muted-foreground mt-1">built by jayan.</p>
-                    <p className="text-xs text-muted-foreground/80 mt-1">app version {APP_VERSION}</p>
-                  </div>
-                  <div className="rounded-lg border border-border/70 bg-card px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <Github className="size-4" />
-                      <p className="text-sm font-medium">github repository</p>
-                    </div>
-                    <p className="mt-1 text-xs text-foreground/90">
-                      suggestions? fill out <a href="https://github.com/KingJayan/code-snippet-library/issues/new/choose" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">an issue</a> or <a href="https://github.com/KingJayan/code-snippet-library/compare" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">create a pr</a>.
-                    </p>
-                  </div>
-                </section>
-              )}
             </div>
             </div>
           </div>
 
           <div className="border-t border-border/70 px-4 py-2">
-            <p className="text-xs text-muted-foreground">{enabledCount} setting{enabledCount === 1 ? "" : "s"} enabled</p>
+            <p className="text-xs text-muted-foreground">{enabledCount} setting{enabledCount === 1 ? "" : "s"} enabled · {APP_VERSION}</p>
           </div>
         </DialogContent>
       </Dialog>
