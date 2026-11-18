@@ -46,16 +46,8 @@ function getMagicLinkRedirectUrl() {
 export async function getCurrentUser() {
 	if (!supabase) return null;
 
-	const {
-		data: { user },
-		error,
-	} = await supabase.auth.getUser();
-
-	if (error) {
-		console.error("session check failed:", error);
-	}
-
-	return user;
+	const { data } = await supabase.auth.getSession();
+	return data.session?.user ?? null;
 }
 
 export async function sendMagicLink(email: string) {

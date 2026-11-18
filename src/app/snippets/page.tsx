@@ -189,6 +189,7 @@ export default function SnippetsPage() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const fetchSeqRef = useRef(0);
   const activeWorkspaceIdRef = useRef<string | null>(null);
+  const refreshControllerRef = useRef<AbortController | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
   const showToast = useCallback((message: string, tone: ToastTone = "info") => {
@@ -324,12 +325,17 @@ export default function SnippetsPage() {
       return;
     }
 
+    const previousWorkspaceId = activeWorkspaceIdRef.current;
     const resolvedWorkspaceId = await fetchWorkspaces();
 
     if (!resolvedWorkspaceId) {
       setSnippets([]);
       setLoading(false);
       setRefreshing(false);
+      return;
+    }
+
+    if (resolvedWorkspaceId !== previousWorkspaceId) {
       return;
     }
 
@@ -344,7 +350,9 @@ export default function SnippetsPage() {
     }
 
     setError(null);
+    refreshControllerRef.current?.abort();
     const controller = new AbortController();
+    refreshControllerRef.current = controller;
     await fetchSnippets(resolvedWorkspaceId, controller.signal);
   }, [checkSession, fetchSnippets, fetchWorkspaces]);
 
@@ -371,19 +379,22 @@ export default function SnippetsPage() {
   }, [activeWorkspaceId, fetchSnippets, isAuthenticated]);
 
   useEffect(() => {
-    void refreshAll({ background: true });
-  }, [refreshAll]);
-
-  useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) {
+      void refreshAll({ background: true });
+      return;
+    }
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "TOKEN_REFRESHED") return;
       void refreshAll({ background: true });
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      refreshControllerRef.current?.abort();
+    };
   }, [refreshAll]);
 
   useEffect(() => {
