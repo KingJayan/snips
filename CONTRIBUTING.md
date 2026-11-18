@@ -25,6 +25,16 @@ bunx tsc --noEmit
 bun run build
 ```
 
+the pre-commit hook runs lint, typecheck and tests.
+
+## releasing
+
+```bash
+bun pm version patch   # or minor | major
+```
+
+builds append `+<commit count>.<sha>` to the version automatically.
+
 5. open your pull request with a short test note
 
 ## notes about pr format
