@@ -1,5 +1,5 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
-import { ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, OPENAI_COMPATIBLE_API_KEY, OPENROUTER_API_KEY } from "$app/env/private";
+import { ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY } from "$app/env/private";
 import { normalizeMessages } from "#lib/ai/chat-normalize.ts";
 import { providers } from "#lib/ai/providers/index.ts";
 import { validateAiBaseUrl } from "#lib/ai/url-security.ts";
@@ -8,36 +8,29 @@ import { authenticate } from "#lib/server/supabase.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const ALLOWED_MODES: ChatMode[] = ["improve", "refactor", "debug", "explain"];
-const AI_CHAT_WINDOW_SECONDS = 60;
-const AI_CHAT_MAX_REQUESTS_PER_WINDOW = 24;
+const LIMITS = {
+  minute: { window: 60, max: 24 },
+  day: { window: 86_400, max: 100 },
+};
 
-async function consumeRateLimit(client: SupabaseClient) {
-  const { data, error } = await client.rpc("consume_ai_rate_limit", {
-    p_window_seconds: AI_CHAT_WINDOW_SECONDS,
-    p_max: AI_CHAT_MAX_REQUESTS_PER_WINDOW,
-  });
+const SERVER_KEYS: Partial<Record<ChatRequestBody["provider"], string | undefined>> = {
+  openai: OPENAI_API_KEY,
+  anthropic: ANTHROPIC_API_KEY,
+  gemini: GEMINI_API_KEY,
+  openrouter: OPENROUTER_API_KEY,
+};
 
-  if (error || typeof data !== "number") {
-    return { allowed: false, retryAfterSeconds: AI_CHAT_WINDOW_SECONDS };
-  }
-
-  return { allowed: data === 0, retryAfterSeconds: data };
+async function consumeRateLimit(client: SupabaseClient, bucket: keyof typeof LIMITS) {
+  const { window, max } = LIMITS[bucket];
+  const { data, error } = await client.rpc("consume_ai_rate_limit", { p_bucket: bucket, p_window_seconds: window, p_max: max });
+  return error || typeof data !== "number" ? window : data;
 }
 
-function resolveApiKey(providerId: ChatRequestBody["provider"], requestApiKey?: string) {
-  if (requestApiKey?.trim()) {
-    return requestApiKey.trim();
-  }
-
-  const envByProvider: Partial<Record<ChatRequestBody["provider"], string | undefined>> = {
-    openai: OPENAI_API_KEY,
-    anthropic: ANTHROPIC_API_KEY,
-    gemini: GEMINI_API_KEY,
-    openrouter: OPENROUTER_API_KEY,
-    "openai-compatible": OPENAI_COMPATIBLE_API_KEY,
-  };
-
-  return envByProvider[providerId]?.trim() || "";
+function rateLimited(retryAfterSeconds: number) {
+  return json(
+    { error: "rate limit exceeded. please wait before sending another request.", retryAfterMs: retryAfterSeconds * 1000 },
+    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+  );
 }
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -47,21 +40,8 @@ export const POST: RequestHandler = async ({ request }) => {
       return json({ error: auth.error ?? "unauthorized" }, { status: 401 });
     }
 
-    const rateLimit = await consumeRateLimit(auth.client);
-    if (!rateLimit.allowed) {
-      return json(
-        {
-          error: "rate limit exceeded. please wait before sending another request.",
-          retryAfterMs: rateLimit.retryAfterSeconds * 1000,
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(rateLimit.retryAfterSeconds),
-          },
-        }
-      );
-    }
+    const minuteWait = await consumeRateLimit(auth.client, "minute");
+    if (minuteWait) return rateLimited(minuteWait);
 
     const body = (await request.json()) as ChatRequestBody;
 
@@ -92,9 +72,15 @@ export const POST: RequestHandler = async ({ request }) => {
       return json({ error: "unsupported provider" }, { status: 400 });
     }
 
-    const resolvedApiKey = resolveApiKey(body.provider, body.apiKey);
+    const ownKey = body.apiKey?.trim() ?? "";
+    const resolvedApiKey = ownKey || SERVER_KEYS[body.provider]?.trim() || "";
     if (provider.requiresApiKey && !resolvedApiKey) {
       return json({ error: "api key is required for this provider" }, { status: 400 });
+    }
+
+    if (!ownKey) {
+      const dayWait = await consumeRateLimit(auth.client, "day");
+      if (dayWait) return rateLimited(dayWait);
     }
 
     let sanitizedBaseUrl = "";

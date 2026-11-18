@@ -40,10 +40,6 @@ create table if not exists public.snippets (
   updated_at  timestamptz not null default now()
 );
 
--- index for full-text search on title + description
-create index if not exists snippets_search_idx on public.snippets
-  using gin (to_tsvector('english', title || ' ' || coalesce(description, '')));
-
 -- index for user lookups + pinned sorting
 create index if not exists snippets_user_id_idx on public.snippets(user_id);
 create index if not exists snippets_workspace_id_idx on public.snippets(workspace_id);
@@ -108,8 +104,9 @@ create index if not exists snippet_tags_snippet_idx on public.snippet_tags(snipp
 create index if not exists snippet_tags_tag_idx on public.snippet_tags(tag_id);
 
 -- ────────────────────────────────────────────
--- removed speculative infrastructure
+-- legacy cleanup
 -- ────────────────────────────────────────────
+drop index if exists public.snippets_search_idx;
 drop function if exists public.can_manage_workspace(uuid) cascade;
 drop function if exists public.is_configured_owner_or_admin() cascade;
 drop function if exists public.current_auth_email() cascade;
@@ -326,14 +323,20 @@ grant execute on function public.increment_snippet_counter(uuid, text) to authen
 -- ai chat rate limit
 -- ────────────────────────────────────────────
 create table if not exists public.ai_rate_limits (
-  user_id      uuid primary key references auth.users(id) on delete cascade,
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  bucket       text not null default 'minute',
   window_start timestamptz not null default now(),
   count        integer not null default 0
 );
 
 alter table public.ai_rate_limits enable row level security;
+alter table public.ai_rate_limits add column if not exists bucket text not null default 'minute';
+alter table public.ai_rate_limits drop constraint if exists ai_rate_limits_pkey;
+alter table public.ai_rate_limits add primary key (user_id, bucket);
 
-create or replace function public.consume_ai_rate_limit(p_window_seconds integer, p_max integer)
+drop function if exists public.consume_ai_rate_limit(integer, integer);
+
+create or replace function public.consume_ai_rate_limit(p_bucket text, p_window_seconds integer, p_max integer)
 returns integer
 language plpgsql
 security definer
@@ -347,9 +350,9 @@ begin
     raise exception 'not authenticated';
   end if;
 
-  insert into public.ai_rate_limits as r (user_id, window_start, count)
-  values (auth.uid(), now(), 1)
-  on conflict (user_id) do update set
+  insert into public.ai_rate_limits as r (user_id, bucket, window_start, count)
+  values (auth.uid(), p_bucket, now(), 1)
+  on conflict (user_id, bucket) do update set
     window_start = case when r.window_start <= now() - v_window then now() else r.window_start end,
     count = case when r.window_start <= now() - v_window then 1 else r.count + 1 end
   returning * into v_row;
@@ -362,8 +365,8 @@ begin
 end;
 $$;
 
-revoke all on function public.consume_ai_rate_limit(integer, integer) from public, anon;
-grant execute on function public.consume_ai_rate_limit(integer, integer) to authenticated;
+revoke all on function public.consume_ai_rate_limit(text, integer, integer) from public, anon;
+grant execute on function public.consume_ai_rate_limit(text, integer, integer) to authenticated;
 
 -- ────────────────────────────────────────────
 -- migration: add missing columns to existing snippets table

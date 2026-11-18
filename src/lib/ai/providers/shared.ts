@@ -1,3 +1,6 @@
+import { fetch, type RequestInit, type Response } from "undici";
+import { publicAgent } from "#lib/ai/url-security.ts";
+
 const REQUEST_TIMEOUT_MS = 45_000;
 
 export type ProviderResult = {
@@ -13,8 +16,8 @@ export async function fetchWithTimeout(url: string, init: RequestInit) {
     return await fetch(url, {
       ...init,
       signal: controller.signal,
-      cache: "no-store",
       redirect: "manual",
+      dispatcher: publicAgent,
     });
   } finally {
     clearTimeout(timeout);

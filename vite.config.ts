@@ -18,7 +18,29 @@ const count = git("rev-parse --is-shallow-repository") === "false" ? git("rev-li
 const build = [count, sha].filter(Boolean).join(".");
 
 export default defineConfig({
-  plugins: [tailwindcss(), sveltekit({ adapter: adapter() })],
+  plugins: [
+    tailwindcss(),
+    sveltekit({
+      adapter: adapter(),
+      csp: {
+        mode: "auto",
+        directives: {
+          "default-src": ["self"],
+          "script-src": ["self", "wasm-unsafe-eval", "https://js.puter.com"],
+          "style-src": ["self", "unsafe-inline", "https://fonts.googleapis.com"],
+          "font-src": ["self", "https://fonts.gstatic.com"],
+          "img-src": ["self", "data:", "blob:", "https:"],
+          "connect-src": ["self", "https:", "wss:"],
+          "frame-src": ["https://puter.com", "https://*.puter.com"],
+          "worker-src": ["self", "blob:"],
+          "object-src": ["none"],
+          "base-uri": ["self"],
+          "form-action": ["self"],
+          "frame-ancestors": ["none"],
+        },
+      },
+    }),
+  ],
   define: {
     __APP_VERSION__: JSON.stringify(`v${pkg.version}${build ? `+${build}` : ""}`),
   },
