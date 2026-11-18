@@ -13,17 +13,15 @@
     activeId: string | null;
     dragging: boolean;
     actions: WorkspaceAction[];
-    pinnedTitles: Record<string, string[]>;
     onSelect: (id: string) => void;
     onDrop: (snippetId: string, workspaceId: string) => void;
   };
 
-  let { workspaces, activeId, dragging, actions, pinnedTitles, onSelect, onDrop }: Props = $props();
+  let { workspaces, activeId, dragging, actions, onSelect, onDrop }: Props = $props();
 
   let collapsed = $state<boolean | null>(null);
   let actionsOpen = $state(false);
   let mobileActionsOpen = $state(false);
-  let pinsOpen = $state<Record<string, boolean>>({});
   let dragOver = $state<string | null>(null);
 
   const tiny = $derived(collapsed ?? (innerWidth.current ?? 1536) < 1280);
@@ -86,33 +84,15 @@
     <div class={cn("min-h-0 flex-1 space-y-1 overflow-y-auto theme-scrollbar", !tiny && "pr-1")}>
       {#each workspaces as workspace (workspace.id)}
         {@const Icon = workspace.id === activeId ? FolderOpen : Folder}
-        {@const pins = pinnedTitles[workspace.id] ?? []}
-        <div class="rounded-lg">
-          <button
-            use:dropTarget={workspace.id}
-            onclick={() => onSelect(workspace.id)}
-            title={name(workspace)}
-            class={cn("transition-all duration-200 ease-out", tiny ? "grid size-7 shrink-0 place-items-center rounded-lg active:scale-[0.92]" : "group/ws flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm active:scale-[0.99]", itemClass(workspace.id))}
-          >
-            <Icon class="size-3.5 shrink-0" />
-            {#if !tiny}<span class="truncate text-xs animate-subtle-slide-right">{name(workspace)}</span>{/if}
-          </button>
-
-          {#if !tiny && pins.length}
-            <div class="mt-0.5 pr-1 pl-7">
-              <button onclick={() => (pinsOpen[workspace.id] = !pinsOpen[workspace.id])} class="text-[11px] text-muted-foreground hover:text-foreground">
-                {pinsOpen[workspace.id] ? "hide pins" : "show pins"}
-              </button>
-              {#if pinsOpen[workspace.id]}
-                <ul class="mt-1 space-y-1">
-                  {#each pins as title, index (index)}
-                    <li class="truncate text-[11px] text-muted-foreground/95" {title}>{title}</li>
-                  {/each}
-                </ul>
-              {/if}
-            </div>
-          {/if}
-        </div>
+        <button
+          use:dropTarget={workspace.id}
+          onclick={() => onSelect(workspace.id)}
+          title={name(workspace)}
+          class={cn("transition-all duration-200 ease-out", tiny ? "grid size-7 shrink-0 place-items-center rounded-lg active:scale-[0.92]" : "group/ws flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm active:scale-[0.99]", itemClass(workspace.id))}
+        >
+          <Icon class="size-3.5 shrink-0" />
+          {#if !tiny}<span class="truncate text-xs animate-subtle-slide-right">{name(workspace)}</span>{/if}
+        </button>
       {/each}
     </div>
 

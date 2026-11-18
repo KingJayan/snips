@@ -156,7 +156,6 @@
       activeId={library.activeId}
       dragging={dragging !== null}
       {actions}
-      pinnedTitles={library.pinnedTitles}
       onSelect={(id) => library.select(id)}
       onDrop={(snippetId, workspaceId) => {
         dragging = null;

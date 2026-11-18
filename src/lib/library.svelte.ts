@@ -32,18 +32,6 @@ export class Library {
 
   active = $derived(this.workspaces.find((w) => w.id === this.activeId) ?? null);
 
-  pinnedTitles = $derived.by(() => {
-    const titles: Record<string, string[]> = {};
-    const lists = [...this.workspaces.map((w) => readCachedList(w.id)), this.snippets];
-    for (const snippet of lists.flat()) {
-      if (!snippet.pinned || !snippet.workspace_id) continue;
-      const list = (titles[snippet.workspace_id] ??= []);
-      const title = snippet.title.trim() || "untitled";
-      if (list.length < 3 && !list.includes(title)) list.push(title);
-    }
-    return titles;
-  });
-
   #controller: AbortController | null = null;
 
   async refresh(background = false) {
