@@ -47,10 +47,8 @@ function withError<T>(error: unknown): ServiceResult<T> {
       ? error.message
       : "something went wrong. please try again.";
 
-  if (/auth session missing/i.test(message)) {
-    message = "you must sign in to continue";
-  } else if (/\bjwt\b|refresh token/i.test(message)) {
-    message = "session expired. refresh the page and sign in again.";
+  if (/auth session missing|\bjwt\b|refresh token/i.test(message)) {
+    message = "please sign in to continue";
   }
 
   return { data: null, error: message };
@@ -213,6 +211,8 @@ function normalizeSnippet<T extends TagLinks>({ snippet_tags, ...row }: T) {
 
 function parseSupabaseError(error: PostgrestError | null) {
   if (!error) return null;
+
+  if (error.code === "PGRST116" || error.code === "22P02") return NOT_FOUND;
 
   const message = `${error.message} ${error.details ?? ""} ${error.hint ?? ""}`;
 
