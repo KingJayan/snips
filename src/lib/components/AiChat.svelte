@@ -136,7 +136,7 @@
         <pre class="font-sans whitespace-pre-wrap">{message.content}</pre>
       </article>
     {:else}
-      <div class="rounded-lg border border-dashed border-border/70 bg-background/40 p-3 text-xs text-muted-foreground">Ask for refactors, bug fixes, tests, or performance edits.</div>
+      <div class="rounded-lg border border-dashed border-border/70 bg-background/40 p-3 text-xs text-muted-foreground">{provider.requiresApiKey && !config.apiKey.trim() ? "add an api key above to start." : "ask for refactors, bug fixes, tests, or performance edits."}</div>
     {/each}
   </div>
 

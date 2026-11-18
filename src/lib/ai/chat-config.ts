@@ -14,12 +14,12 @@ export type ProviderOption = {
 };
 
 export const PROVIDERS: ProviderOption[] = [
-  { id: "openai", label: "OpenAI (GPT / Codex)", description: "Use OpenAI models including GPT and Codex variants.", models: ["gpt-5-mini", "gpt-5", "codex-mini-latest", "gpt-4.1-mini"], requiresApiKey: true, supportsBaseUrl: false },
-  { id: "anthropic", label: "Anthropic (Claude)", description: "Use Anthropic Claude models.", models: ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"], requiresApiKey: true, supportsBaseUrl: false },
-  { id: "gemini", label: "Google Gemini", description: "Use Gemini models from Google AI Studio.", models: ["gemini-pro-latest", "gemini-flash-latest", "gemini-3.5-flash"], requiresApiKey: true, supportsBaseUrl: false },
-  { id: "openrouter", label: "OpenRouter (Qwen / Llama / etc)", description: "Access many model families including Qwen and Llama.", models: ["qwen/qwen3-coder", "meta-llama/llama-3.1-70b-instruct", "deepseek/deepseek-r1"], requiresApiKey: true, supportsBaseUrl: false },
-  { id: "openai-compatible", label: "OpenAI-Compatible (Custom)", description: "Any endpoint that supports /chat/completions.", models: ["llama-3.1-70b-instruct", "mistral-large-latest", "gpt-4.1-mini"], requiresApiKey: true, supportsBaseUrl: true },
-  { id: "puterjs", label: "PuterJS AI", description: "Use PuterJS browser AI models.", models: ["gpt-4.1-mini", "gpt-4o-mini"], requiresApiKey: false, supportsBaseUrl: false },
+  { id: "openai", label: "openai (gpt / codex)", description: "use openai models including gpt and codex variants.", models: ["gpt-5-mini", "gpt-5", "codex-mini-latest", "gpt-4.1-mini"], requiresApiKey: true, supportsBaseUrl: false },
+  { id: "anthropic", label: "anthropic (claude)", description: "use anthropic claude models.", models: ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"], requiresApiKey: true, supportsBaseUrl: false },
+  { id: "gemini", label: "google gemini", description: "use gemini models from google ai studio.", models: ["gemini-pro-latest", "gemini-flash-latest", "gemini-3.5-flash"], requiresApiKey: true, supportsBaseUrl: false },
+  { id: "openrouter", label: "openrouter (qwen / llama / etc)", description: "access many model families including qwen and llama.", models: ["qwen/qwen3-coder", "meta-llama/llama-3.1-70b-instruct", "deepseek/deepseek-r1"], requiresApiKey: true, supportsBaseUrl: false },
+  { id: "openai-compatible", label: "openai-compatible (custom)", description: "any endpoint that supports /chat/completions.", models: ["llama-3.1-70b-instruct", "mistral-large-latest", "gpt-4.1-mini"], requiresApiKey: true, supportsBaseUrl: true },
+  { id: "puterjs", label: "puterjs ai", description: "use puterjs browser ai models.", models: ["gpt-4.1-mini", "gpt-4o-mini"], requiresApiKey: false, supportsBaseUrl: false },
 ];
 
 export const CHAT_MODES: ChatMode[] = ["improve", "refactor", "debug", "explain"];

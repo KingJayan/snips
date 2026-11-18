@@ -26,7 +26,7 @@
   const TOGGLE = "text-muted-foreground aria-pressed:bg-accent aria-pressed:text-foreground";
   const CODE_HEIGHT ="h-[50vh] min-h-[280px] sm:h-[56vh] sm:min-h-[360px] lg:h-[62vh] lg:max-h-[780px]";
 
-  const aiDefault = boolSetting(SETTINGS_KEYS.aiPanelOpenByDefault, true);
+  const aiDefault = boolSetting(SETTINGS_KEYS.aiPanelOpenByDefault);
   const vim = boolSetting(SETTINGS_KEYS.vimShortcuts);
 
   let snippet = $state<SnippetWithTags | null>(null);
