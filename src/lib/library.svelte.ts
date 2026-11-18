@@ -115,7 +115,7 @@ export class Library {
     if (!this.activeId) return Promise.resolve("create a workspace first");
     return this.#run("saving snippet...", createSnippet({ ...draft, workspace_id: this.activeId }), "snippet saved", (snippet) => {
       const { code, ...summary } = snippet;
-      this.#setSnippets([summary, ...this.snippets]);
+      this.#setSnippets([summary, ...this.snippets].sort(byPinThenRecent));
     });
   }
 

@@ -36,7 +36,6 @@
     "@codemirror/view": "^6.41.0",
     "@lucide/svelte": "^1.74.0",
     "@supabase/supabase-js": "^2.98.0",
-    "@tanstack/svelte-virtual": "^3.13.52",
     "@threlte/core": "^8.7.0",
     "@threlte/extras": "^9.23.1",
     "class-variance-authority": "^0.7.1",
