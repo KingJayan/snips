@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useMounted } from "@/lib/hooks";
 
 type ThemeMode = "light" | "dark";
 
@@ -23,11 +24,17 @@ function applyTheme(next: ThemeMode) {
     root.classList.remove("dark");
   }
 
-  window.localStorage.setItem(THEME_STORAGE_KEY, next);
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, next);
+  } catch {
+    return;
+  }
 }
 
 export function ThemeToggle() {
+  const mounted = useMounted();
   const [theme, setTheme] = useState<ThemeMode>(() => readTheme());
+  const shown = mounted ? theme : "dark";
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
@@ -42,10 +49,10 @@ export function ThemeToggle() {
       size="icon"
       className="fixed right-4 bottom-4 z-[60] rounded-full border-border/70 bg-card/90 shadow-lg backdrop-blur"
       onClick={toggleTheme}
-      aria-label={theme === "dark" ? "switch to light mode" : "switch to dark mode"}
-      title={theme === "dark" ? "switch to light mode" : "switch to dark mode"}
+      aria-label={shown === "dark" ? "switch to light mode" : "switch to dark mode"}
+      title={shown === "dark" ? "switch to light mode" : "switch to dark mode"}
     >
-      {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      {shown === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </Button>
   );
 }

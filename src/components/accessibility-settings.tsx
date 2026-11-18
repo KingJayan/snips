@@ -41,6 +41,7 @@ import {
   type CustomPerformanceProfile,
 } from "@/lib/hardware-detection";
 import { APP_VERSION } from "@/lib/app-version";
+import { useMounted } from "@/lib/hooks";
 
 type A11ySettings = {
   reducedMotion: boolean;
@@ -137,7 +138,27 @@ function readInitialRecentChanges(): RecentChange[] {
   }
 }
 
+function SettingsButton({ onClick }: { onClick?: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      className="fixed right-4 bottom-16 z-[60] rounded-full border-border/70 bg-card/90 shadow-lg backdrop-blur"
+      onClick={onClick}
+      aria-label="open settings"
+      title="settings"
+    >
+      <Settings2 className="size-4" />
+    </Button>
+  );
+}
+
 export function AccessibilitySettings() {
+  return useMounted() ? <SettingsPanel /> : <SettingsButton />;
+}
+
+function SettingsPanel() {
   const [open, setOpen] = useState(false);
   const [settingsQuery, setSettingsQuery] = useState("");
   const [settings, setSettings] = useState<A11ySettings>(() => readInitialA11ySettings());
@@ -457,17 +478,7 @@ export function AccessibilitySettings() {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="fixed right-4 bottom-16 z-[60] rounded-full border-border/70 bg-card/90 shadow-lg backdrop-blur"
-        onClick={() => setOpen(true)}
-        aria-label="open settings"
-        title="settings"
-      >
-        <Settings2 className="size-4" />
-      </Button>
+      <SettingsButton onClick={() => setOpen(true)} />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden rounded-2xl border-border/70 p-0">

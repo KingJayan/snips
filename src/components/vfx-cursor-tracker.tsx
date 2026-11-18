@@ -18,10 +18,8 @@ export function VfxCursorTracker() {
     };
   }, []);
 
-  const profile = detectHardwareProfile();
-  const recommendations = getPerformanceRecommendations(profile);
-
   useEffect(() => {
+    const recommendations = getPerformanceRecommendations(detectHardwareProfile());
     if (recommendations.disableCursorTracking) {
       return;
     }
@@ -75,21 +73,21 @@ export function VfxCursorTracker() {
 
 
     const throttledOnPointerMove = recommendations.throttleMouseEvents
-      ? (createThrottledHandler as any)(onPointerMove, 32)
-      : onPointerMove;
+      ? createThrottledHandler(onPointerMove as EventListener, 32)
+      : (onPointerMove as EventListener);
 
-    window.addEventListener("pointermove", throttledOnPointerMove as any, { passive: true });
+    window.addEventListener("pointermove", throttledOnPointerMove, { passive: true });
     document.addEventListener("pointerenter", updateSheen as EventListener, true);
     document.addEventListener("pointerover", updateSheen as EventListener, true);
     document.addEventListener("pointerleave", onPointerLeave, true);
 
     return () => {
-      window.removeEventListener("pointermove", throttledOnPointerMove as any);
+      window.removeEventListener("pointermove", throttledOnPointerMove);
       document.removeEventListener("pointerenter", updateSheen as EventListener, true);
       document.removeEventListener("pointerover", updateSheen as EventListener, true);
       document.removeEventListener("pointerleave", onPointerLeave, true);
     };
-  }, [recommendations.disableCursorTracking, recommendations.throttleMouseEvents, version]);
+  }, [version]);
 
   return null;
 }

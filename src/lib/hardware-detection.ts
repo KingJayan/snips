@@ -6,7 +6,6 @@ export interface HardwareProfile {
   isLowEnd: boolean;
   cores: number;
   ram: number | null; // in GB, null if unavailable
-  gpu: "unknown" | "integrated" | "discrete";
   effectiveType: "4g" | "3g" | "2g" | "slow-2g" | "unknown";
   userPreference: boolean | null; // null = auto, true = force low-end, false = force normal
 }
@@ -61,38 +60,6 @@ export function detectHardwareProfile(): HardwareProfile {
   const effectiveType = (connection?.effectiveType ?? "unknown") as HardwareProfile["effectiveType"];
   const deviceMemory = navigator_?.deviceMemory ?? null;
 
-  //detect GPU type
-  let gpu: "unknown" | "integrated" | "discrete" = "unknown";
-  if (typeof window !== "undefined") {
-    try {
-      const canvas = document.createElement("canvas");
-      const gl =
-        (canvas.getContext("webgl") as WebGLRenderingContext | null) ||
-        (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null);
-      if (gl) {
-        const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-        if (debugInfo) {
-          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-          if (typeof renderer === "string") {
-            const rendererLower = renderer.toLowerCase();
-            if (rendererLower.includes("intel") || rendererLower.includes("radeon")) {
-              gpu = "integrated";
-            } else if (
-              rendererLower.includes("nvidia") ||
-              rendererLower.includes("geforce") ||
-              rendererLower.includes("amd") ||
-              rendererLower.includes("apple")
-            ) {
-              gpu = "discrete";
-            }
-          }
-        }
-      }
-    } catch {
-      //silently fail, gpu detection only advisory
-    }
-  }
-
   const isLowEnd =
     userPreference !== false &&
     (userPreference === true || cores <= 4 || (deviceMemory !== null && deviceMemory <= 4));
@@ -101,7 +68,6 @@ export function detectHardwareProfile(): HardwareProfile {
     isLowEnd,
     cores,
     ram: deviceMemory,
-    gpu,
     effectiveType,
     userPreference,
   };

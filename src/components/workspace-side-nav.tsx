@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { ChevronRight, Folder, FolderOpen, Globe, Home, Play } from "lucide-react";
 import { useNavigate } from "@/lib/use-navigate";
 import type { Workspace } from "@/lib/types";
@@ -32,6 +32,17 @@ type WorkspaceSideNavProps = {
 
 type DesktopPanelSize = "full" | "small" | "tiny";
 
+function subscribeResize(callback: () => void) {
+  window.addEventListener("resize", callback);
+  return () => window.removeEventListener("resize", callback);
+}
+
+function readAutoPanelSize(): DesktopPanelSize {
+  if (window.innerWidth < 1280) return "tiny";
+  if (window.innerWidth < 1536) return "small";
+  return "full";
+}
+
 export function WorkspaceSideNav({
   workspaces = [],
   activeWorkspaceId = null,
@@ -51,12 +62,9 @@ export function WorkspaceSideNav({
   const { goto } = useNavigate();
   const [desktopActionsOpen, setDesktopActionsOpen] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
-  const [desktopPanelSize, setDesktopPanelSize] = useState<DesktopPanelSize>(() => {
-    if (typeof window === "undefined") return "full";
-    if (window.innerWidth < 1280) return "tiny";
-    if (window.innerWidth < 1536) return "small";
-    return "full";
-  });
+  const [chosenPanelSize, setDesktopPanelSize] = useState<DesktopPanelSize | null>(null);
+  const autoPanelSize = useSyncExternalStore(subscribeResize, readAutoPanelSize, () => "full" as const);
+  const desktopPanelSize = chosenPanelSize ?? autoPanelSize;
   const [workspacePinsOpen, setWorkspacePinsOpen] = useState<Record<string, boolean>>({});
   const [dragOverWorkspaceId, setDragOverWorkspaceId] = useState<string | null>(null);
   const hasActions = actions.length > 0;

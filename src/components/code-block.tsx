@@ -74,10 +74,7 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
 	const [html, setHtml] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [copyState, setCopyState] = useState<"idle" | "done" | "failed">("idle");
-	const [theme, setTheme] = useState<Theme>(() => {
-		if (typeof window === "undefined") return "github-dark";
-		return getStoredTheme();
-	});
+	const [theme, setTheme] = useState<Theme>("github-dark");
 	const [showThemes, setShowThemes] = useState(false);
 	const [wrapLines, setWrapLines] = useState(false);
 	const [copyResetTimer, setCopyResetTimer] = useState<number | null>(null);
