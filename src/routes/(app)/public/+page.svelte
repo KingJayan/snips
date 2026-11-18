@@ -71,7 +71,7 @@
     {:else}
       <div class="space-y-3">
         {#each filtered as snippet (snippet.id)}
-          <SnippetCard {snippet} basePath="/public" />
+          <SnippetCard {snippet} basePath="/public" onTagClick={(tag) => (activeTag = tag)} />
         {/each}
       </div>
     {/if}

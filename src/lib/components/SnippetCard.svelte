@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { ArrowUpRight, Globe, Pin, Play, Trash } from "@lucide/svelte";
   import { timeAgo } from "#lib/time.ts";
   import type { SnippetSummaryWithTags } from "#lib/types.ts";
-  import Badge from "./ui/Badge.svelte";
+  import { badgeVariants } from "./ui/variants";
+  import { cn } from "#lib/utils.ts";
 
   type Props = {
     snippet: SnippetSummaryWithTags;
@@ -18,11 +18,6 @@
 
   let { snippet, basePath = "/snippets", selected = false, onTagClick, onTogglePin, onDelete, onDragStart, onDragEnd }: Props = $props();
 
-  function stop(event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
   function dragStart(event: DragEvent) {
     if (!event.dataTransfer) return;
     event.dataTransfer.effectAllowed = "move";
@@ -32,44 +27,39 @@
   }
 </script>
 
-<a
-  href="{basePath}/{snippet.id}"
+<article
   draggable="true"
   ondragstart={dragStart}
   ondragend={() => onDragEnd?.()}
-  class="snippet-card-shell group relative flex flex-col gap-2 rounded-lg border border-border/60 bg-card p-3 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:gap-3 sm:p-4 motion-safe-enter vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow"
+  class="snippet-card-shell group relative flex flex-col gap-2 rounded-lg border border-border/60 bg-card p-3 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md focus-within:ring-2 focus-within:ring-ring sm:gap-3 sm:p-4 motion-safe-enter vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow"
   data-selected={selected}
   aria-current={selected ? "true" : undefined}
   style:contain="layout style"
   style:box-shadow={selected ? "0 0 0 2px color-mix(in oklch, var(--ring) 72%, transparent 28%)" : undefined}
-  title={snippet.title}
 >
   <div class="flex items-start justify-between gap-2 sm:gap-3">
     <div class="flex min-w-0 flex-1 flex-col gap-0.5 sm:gap-1">
-      <h3 class="truncate text-xs leading-tight font-semibold tracking-tight text-foreground sm:text-sm">{snippet.title}</h3>
+      <h3 class="truncate text-xs leading-tight font-semibold tracking-tight text-foreground sm:text-sm">
+        <a href="{basePath}/{snippet.id}" class="outline-none after:absolute after:inset-0" title={snippet.title}>{snippet.title}</a>
+      </h3>
       {#if snippet.description}
         <p class="line-clamp-1 text-[11px] text-muted-foreground sm:text-xs">{snippet.description}</p>
       {/if}
     </div>
 
-    <div class="flex shrink-0 items-center gap-1">
-      <button
-        onclick={(e) => {
-          stop(e);
-          goto(`/playground/${snippet.id}`);
-        }}
+    <div class="relative z-10 flex shrink-0 items-center gap-1">
+      <a
+        href="/playground/{snippet.id}"
         class="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground vfx-icon-chip"
+        aria-label="open in playground"
         title="open in playground"
       >
         <Play class="size-3" />
-      </button>
+      </a>
 
       {#if onTogglePin}
         <button
-          onclick={(e) => {
-            stop(e);
-            onTogglePin(snippet.id, !snippet.pinned);
-          }}
+          onclick={() => onTogglePin(snippet.id, !snippet.pinned)}
           class="rounded p-1 transition-colors hover:bg-accent vfx-icon-chip {snippet.pinned ? 'text-yellow-500' : 'text-muted-foreground'}"
           aria-label={snippet.pinned ? "unpin" : "pin"}
         >
@@ -79,11 +69,8 @@
 
       {#if onDelete}
         <button
-          onclick={(e) => {
-            stop(e);
-            if (confirm(`delete "${snippet.title}"?`)) onDelete(snippet.id);
-          }}
-          class="rounded p-1 text-muted-foreground opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 vfx-icon-chip"
+          onclick={() => confirm(`delete "${snippet.title}"?`) && onDelete(snippet.id)}
+          class="rounded p-1 text-muted-foreground transition-colors pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 vfx-icon-chip"
           aria-label="delete snippet"
         >
           <Trash class="size-3" />
@@ -100,21 +87,17 @@
   <div class="h-px w-full bg-border opacity-40"></div>
 
   <div class="flex items-center justify-between gap-1 sm:gap-2">
-    <div class="flex min-w-0 flex-1 flex-wrap gap-0.5 sm:gap-1">
+    <div class="relative z-10 flex min-w-0 flex-1 flex-wrap gap-0.5 sm:gap-1">
       {#each snippet.tags.slice(0, 4) as tag (tag.id)}
-        <Badge
-          variant="outline"
-          class="max-w-20 cursor-pointer truncate text-[8px] transition-colors hover:bg-accent sm:max-w-24 sm:text-[10px]"
-          role="button"
-          tabindex={-1}
-          onclick={(e) => {
-            stop(e);
-            onTagClick?.(tag.name);
-          }}
+        <button
+          type="button"
+          class={cn(badgeVariants({ variant: "outline" }), "max-w-20 cursor-pointer truncate text-[8px] transition-colors hover:bg-accent sm:max-w-24 sm:text-[10px]")}
+          onclick={() => onTagClick?.(tag.name)}
+          aria-label="filter by {tag.name}"
           title={tag.name.length > 20 ? tag.name : undefined}
         >
           {tag.name}
-        </Badge>
+        </button>
       {/each}
       {#if snippet.tags.length > 4}
         <span class="text-[8px] text-muted-foreground sm:text-[10px]">+{snippet.tags.length - 4}</span>
@@ -126,4 +109,4 @@
       <ArrowUpRight class="size-2.5 text-muted-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 sm:size-3" />
     </div>
   </div>
-</a>
+</article>
