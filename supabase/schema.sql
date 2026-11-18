@@ -17,16 +17,6 @@ create table if not exists public.workspaces (
   unique(owner_id, name)
 );
 
-create table if not exists public.workspace_members (
-  workspace_id uuid not null references public.workspaces(id) on delete cascade,
-  user_id      uuid not null references auth.users(id) on delete cascade,
-  role         text not null check (role in ('owner', 'editor', 'viewer')),
-  created_at   timestamptz not null default now(),
-  primary key (workspace_id, user_id)
-);
-
-create index if not exists workspace_members_user_idx on public.workspace_members(user_id);
-
 -- ────────────────────────────────────────────
 -- snippets
 -- ────────────────────────────────────────────
@@ -118,402 +108,174 @@ create index if not exists snippet_tags_snippet_idx on public.snippet_tags(snipp
 create index if not exists snippet_tags_tag_idx on public.snippet_tags(tag_id);
 
 -- ────────────────────────────────────────────
+-- removed speculative infrastructure
+-- ────────────────────────────────────────────
+drop function if exists public.can_manage_workspace(uuid) cascade;
+drop function if exists public.is_configured_owner_or_admin() cascade;
+drop function if exists public.current_auth_email() cascade;
+drop table if exists public.app_access_config cascade;
+drop table if exists public.workspace_members cascade;
+drop function if exists public.increment_snippet_view(uuid, boolean);
+drop function if exists public.increment_snippet_copy(uuid, boolean);
+
+-- ────────────────────────────────────────────
 -- row level security
 -- ────────────────────────────────────────────
-
--- snippets: users can only crud their own rows, but anyone can view public snippets
-alter table public.snippets enable row level security;
-
--- workspaces
--- configurable owner/admin emails are stored in a single-row config table
-create table if not exists public.app_access_config (
-  id integer primary key default 1,
-  owner_emails text[] not null default '{}',
-  admin_emails text[] not null default '{}',
-  updated_at timestamptz not null default now(),
-  check (id = 1)
-);
-
-insert into public.app_access_config (id)
-values (1)
-on conflict (id) do nothing;
-
-revoke all on table public.app_access_config from public;
-revoke all on table public.app_access_config from anon;
-revoke all on table public.app_access_config from authenticated;
-
-create or replace function public.current_auth_email()
-returns text
-language sql
-stable
-as $$
-  select lower(coalesce(auth.jwt() ->> 'email', ''))
-$$;
-
-create or replace function public.is_configured_owner_or_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  with cfg as (
-    select owner_emails, admin_emails
-    from public.app_access_config
-    where id = 1
-  )
-  select exists (
-    select 1
-    from cfg
-    where public.current_auth_email() = any(owner_emails)
-       or public.current_auth_email() = any(admin_emails)
-  )
-$$;
-
-create or replace function public.can_manage_workspace(p_workspace_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.workspaces w
-    where w.id = p_workspace_id
-      and (
-        w.owner_id = auth.uid()
-        or public.is_configured_owner_or_admin()
-      )
-  )
-$$;
-
--- helper comments for configuration:
--- update public.app_access_config
--- set owner_emails = array['owner@example.com'],
---     admin_emails = array['admin@example.com']
--- where id = 1;
-
--- Drop old workspace policies if they exist
-do $$
-begin
-  drop policy if exists "users can view own workspace memberships" on public.workspace_members;
-  drop policy if exists "owners can manage workspace memberships" on public.workspace_members;
-  drop policy if exists "owners/admin can insert workspace memberships" on public.workspace_members;
-  drop policy if exists "owners/admin can update workspace memberships" on public.workspace_members;
-  drop policy if exists "owners/admin can delete workspace memberships" on public.workspace_members;
-
-  drop policy if exists "users can view own or shared workspaces" on public.workspaces;
-  drop policy if exists "users can create own workspaces" on public.workspaces;
-  drop policy if exists "owners can update workspaces" on public.workspaces;
-  drop policy if exists "owners can delete workspaces" on public.workspaces;
-  drop policy if exists "owner/admin can select workspaces" on public.workspaces;
-  drop policy if exists "member can select workspaces" on public.workspaces;
-  drop policy if exists "public can select public workspaces" on public.workspaces;
-  drop policy if exists "owner/admin can insert workspaces" on public.workspaces;
-  drop policy if exists "owner/admin can update workspaces" on public.workspaces;
-  drop policy if exists "owner/admin can delete workspaces" on public.workspaces;
-end
-$$;
-
 alter table public.workspaces enable row level security;
-alter table public.workspace_members enable row level security;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspaces' and policyname = 'owner/admin can select workspaces') then
-    create policy "owner/admin can select workspaces"
-      on public.workspaces for select
-      using (
-        owner_id = auth.uid()
-        or public.is_configured_owner_or_admin()
-      );
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspaces' and policyname = 'member can select workspaces') then
-    create policy "member can select workspaces"
-      on public.workspaces for select
-      using (
-        exists (
-          select 1 from public.workspace_members wm
-          where wm.workspace_id = workspaces.id
-            and wm.user_id = auth.uid()
-        )
-      );
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspaces' and policyname = 'public can select public workspaces') then
-    create policy "public can select public workspaces"
-      on public.workspaces for select
-      using (is_public = true);
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspaces' and policyname = 'owner/admin can insert workspaces') then
-    create policy "owner/admin can insert workspaces"
-      on public.workspaces for insert
-      with check (
-        owner_id = auth.uid()
-        or public.is_configured_owner_or_admin()
-      );
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspaces' and policyname = 'owner/admin can update workspaces') then
-    create policy "owner/admin can update workspaces"
-      on public.workspaces for update
-      using (
-        owner_id = auth.uid()
-        or public.is_configured_owner_or_admin()
-      )
-      with check (
-        owner_id = auth.uid()
-        or public.is_configured_owner_or_admin()
-      );
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspaces' and policyname = 'owner/admin can delete workspaces') then
-    create policy "owner/admin can delete workspaces"
-      on public.workspaces for delete
-      using (
-        owner_id = auth.uid()
-        or public.is_configured_owner_or_admin()
-      );
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspace_members' and policyname = 'users can view own workspace memberships') then
-    create policy "users can view own workspace memberships"
-      on public.workspace_members for select
-      using (user_id = auth.uid());
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspace_members' and policyname = 'owners/admin can insert workspace memberships') then
-    create policy "owners/admin can insert workspace memberships"
-      on public.workspace_members for insert
-      with check (public.can_manage_workspace(workspace_id));
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspace_members' and policyname = 'owners/admin can update workspace memberships') then
-    create policy "owners/admin can update workspace memberships"
-      on public.workspace_members for update
-      using (public.can_manage_workspace(workspace_id))
-      with check (public.can_manage_workspace(workspace_id));
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'workspace_members' and policyname = 'owners/admin can delete workspace memberships') then
-    create policy "owners/admin can delete workspace memberships"
-      on public.workspace_members for delete
-      using (public.can_manage_workspace(workspace_id));
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'snippets' and policyname = 'users can view own snippets') then
-    create policy "users can view own snippets"
-      on public.snippets for select
-      using (auth.uid() = user_id);
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'snippets' and policyname = 'users can view workspace snippets') then
-    create policy "users can view workspace snippets"
-      on public.snippets for select
-      using (
-        exists (
-          select 1 from public.workspaces w
-          where w.id = snippets.workspace_id
-            and (
-              w.owner_id = auth.uid()
-              or w.is_public = true
-              or exists (
-                select 1 from public.workspace_members wm
-                where wm.workspace_id = snippets.workspace_id
-                  and wm.user_id = auth.uid()
-              )
-            )
-        )
-      );
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'snippets' and policyname = 'anyone can view public snippets') then
-    create policy "anyone can view public snippets"
-      on public.snippets for select
-      using (public = true);
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'snippets' and policyname = 'users can insert own snippets') then
-    create policy "users can insert own snippets"
-      on public.snippets for insert
-      with check (
-        auth.uid() = user_id
-        and exists (
-          select 1 from public.workspaces w
-          where w.id = snippets.workspace_id
-            and (
-              w.owner_id = auth.uid()
-              or exists (
-                select 1 from public.workspace_members wm
-                where wm.workspace_id = snippets.workspace_id
-                  and wm.user_id = auth.uid()
-                  and wm.role in ('owner', 'editor')
-              )
-            )
-        )
-      );
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'snippets' and policyname = 'users can update own snippets') then
-    create policy "users can update own snippets"
-      on public.snippets for update
-      using (auth.uid() = user_id)
-      with check (auth.uid() = user_id);
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'snippets' and policyname = 'users can delete own snippets') then
-    create policy "users can delete own snippets"
-      on public.snippets for delete
-      using (auth.uid() = user_id);
-  end if;
-end
-$$;
-
--- tags: readable by all authenticated users, writable by all authenticated
+alter table public.snippets enable row level security;
 alter table public.tags enable row level security;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'tags' and policyname = 'authenticated users can view tags') then
-    create policy "authenticated users can view tags"
-      on public.tags for select
-      using (auth.role() = 'authenticated');
-  end if;
-end
-$$;
-
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'tags' and policyname = 'authenticated users can insert tags') then
-    create policy "authenticated users can insert tags"
-      on public.tags for insert
-      with check (auth.role() = 'authenticated');
-  end if;
-end
-$$;
-
--- snippet_tags: follows snippet ownership
 alter table public.snippet_tags enable row level security;
 
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'snippet_tags' and policyname = 'users can view own snippet_tags') then
-    create policy "users can view own snippet_tags"
-      on public.snippet_tags for select
-      using (
-        exists (
-          select 1 from public.snippets
-          where snippets.id = snippet_tags.snippet_id
-            and snippets.user_id = auth.uid()
-        )
-      );
-  end if;
-end
+create or replace function public.owns_workspace(p_workspace_id uuid)
+returns boolean
+language sql
+stable
+as $$
+  select exists (
+    select 1 from public.workspaces w
+    where w.id = p_workspace_id and w.owner_id = auth.uid()
+  )
 $$;
 
 do $$
+declare
+  p record;
 begin
-  if not exists (select 1 from pg_policies where tablename = 'snippet_tags' and policyname = 'users can insert own snippet_tags') then
-    create policy "users can insert own snippet_tags"
-      on public.snippet_tags for insert
-      with check (
-        exists (
-          select 1 from public.snippets
-          where snippets.id = snippet_tags.snippet_id
-            and snippets.user_id = auth.uid()
-        )
-      );
-  end if;
+  for p in
+    select policyname, tablename from pg_policies
+    where schemaname = 'public' and tablename in ('workspaces', 'snippets', 'tags', 'snippet_tags')
+  loop
+    execute format('drop policy %I on public.%I', p.policyname, p.tablename);
+  end loop;
 end
 $$;
 
-do $$
-begin
-  if not exists (select 1 from pg_policies where tablename = 'snippet_tags' and policyname = 'users can delete own snippet_tags') then
-    create policy "users can delete own snippet_tags"
-      on public.snippet_tags for delete
-      using (
-        exists (
-          select 1 from public.snippets
-          where snippets.id = snippet_tags.snippet_id
-            and snippets.user_id = auth.uid()
-        )
-      );
-  end if;
-end
-$$;
+create policy "workspaces select" on public.workspaces for select
+  using (owner_id = auth.uid() or is_public = true);
+create policy "workspaces insert" on public.workspaces for insert
+  with check (owner_id = auth.uid());
+create policy "workspaces update" on public.workspaces for update
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+create policy "workspaces delete" on public.workspaces for delete
+  using (owner_id = auth.uid());
+
+create policy "snippets select" on public.snippets for select
+  using (
+    user_id = auth.uid()
+    or public = true
+    or exists (
+      select 1 from public.workspaces w
+      where w.id = snippets.workspace_id and w.is_public = true
+    )
+  );
+create policy "snippets insert" on public.snippets for insert
+  with check (user_id = auth.uid() and public.owns_workspace(workspace_id));
+create policy "snippets update" on public.snippets for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid() and public.owns_workspace(workspace_id));
+create policy "snippets delete" on public.snippets for delete
+  using (user_id = auth.uid());
+
+create policy "tags select" on public.tags for select
+  using (true);
+create policy "tags insert" on public.tags for insert
+  with check (auth.role() = 'authenticated');
+
+create policy "snippet_tags select" on public.snippet_tags for select
+  using (exists (select 1 from public.snippets s where s.id = snippet_tags.snippet_id));
+create policy "snippet_tags insert" on public.snippet_tags for insert
+  with check (exists (select 1 from public.snippets s where s.id = snippet_tags.snippet_id and s.user_id = auth.uid()));
+create policy "snippet_tags delete" on public.snippet_tags for delete
+  using (exists (select 1 from public.snippets s where s.id = snippet_tags.snippet_id and s.user_id = auth.uid()));
 
 -- ────────────────────────────────────────────
--- rpc helpers for safe counter increments
+-- atomic snippet save
 -- ────────────────────────────────────────────
-
-create or replace function public.increment_snippet_view(
-  p_snippet_id uuid,
-  p_public_only boolean default false
+create or replace function public.save_snippet(
+  p_id uuid,
+  p_workspace_id uuid,
+  p_title text,
+  p_language text,
+  p_description text,
+  p_code text,
+  p_benchmark_chars integer,
+  p_benchmark_bytes integer,
+  p_benchmark_bits integer,
+  p_benchmark_lines integer,
+  p_tags text[]
 )
+returns uuid
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_id uuid;
+  v_tags text[];
+begin
+  select coalesce(array_agg(distinct lower(trim(t))), '{}')
+  into v_tags
+  from unnest(coalesce(p_tags, '{}')) t
+  where trim(t) <> '';
+
+  if p_id is null then
+    insert into public.snippets (
+      user_id, workspace_id, title, language, description, code,
+      benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines
+    )
+    values (
+      auth.uid(), p_workspace_id, p_title, p_language, p_description, p_code,
+      p_benchmark_chars, p_benchmark_bytes, p_benchmark_bits, p_benchmark_lines
+    )
+    returning id into v_id;
+  else
+    update public.snippets
+    set title = p_title,
+        language = p_language,
+        description = p_description,
+        code = p_code,
+        benchmark_chars = p_benchmark_chars,
+        benchmark_bytes = p_benchmark_bytes,
+        benchmark_bits = p_benchmark_bits,
+        benchmark_lines = p_benchmark_lines
+    where id = p_id and user_id = auth.uid()
+    returning id into v_id;
+
+    if v_id is null then
+      raise exception 'snippet not found';
+    end if;
+
+    delete from public.snippet_tags where snippet_id = v_id;
+  end if;
+
+  insert into public.tags (name)
+  select unnest(v_tags)
+  on conflict (name) do nothing;
+
+  insert into public.snippet_tags (snippet_id, tag_id)
+  select v_id, t.id from public.tags t where t.name = any(v_tags);
+
+  return v_id;
+end;
+$$;
+
+revoke all on function public.save_snippet(uuid, uuid, text, text, text, text, integer, integer, integer, integer, text[]) from public, anon;
+grant execute on function public.save_snippet(uuid, uuid, text, text, text, text, integer, integer, integer, integer, text[]) to authenticated;
+
+-- ────────────────────────────────────────────
+-- view / copy counters (one per user per snippet)
+-- ────────────────────────────────────────────
+create table if not exists public.snippet_counter_events (
+  snippet_id uuid not null references public.snippets(id) on delete cascade,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  kind       text not null check (kind in ('view', 'copy')),
+  created_at timestamptz not null default now(),
+  primary key (snippet_id, user_id, kind)
+);
+
+alter table public.snippet_counter_events enable row level security;
+
+create or replace function public.increment_snippet_counter(p_snippet_id uuid, p_kind text)
 returns boolean
 language plpgsql
 security definer
@@ -522,56 +284,86 @@ as $$
 declare
   changed_rows integer;
 begin
-  if p_public_only then
-    update public.snippets
-    set view_count = view_count + 1
-    where id = p_snippet_id
-      and public = true;
-  else
-    update public.snippets
-    set view_count = view_count + 1
-    where id = p_snippet_id
-      and user_id = auth.uid();
+  if auth.uid() is null or p_kind not in ('view', 'copy') then
+    return false;
   end if;
 
+  if not exists (
+    select 1 from public.snippets s
+    where s.id = p_snippet_id
+      and (
+        s.user_id = auth.uid()
+        or s.public = true
+        or exists (select 1 from public.workspaces w where w.id = s.workspace_id and w.is_public = true)
+      )
+  ) then
+    return false;
+  end if;
+
+  insert into public.snippet_counter_events (snippet_id, user_id, kind)
+  values (p_snippet_id, auth.uid(), p_kind)
+  on conflict do nothing;
+
   get diagnostics changed_rows = row_count;
-  return changed_rows > 0;
+  if changed_rows = 0 then
+    return false;
+  end if;
+
+  if p_kind = 'view' then
+    update public.snippets set view_count = view_count + 1 where id = p_snippet_id;
+  else
+    update public.snippets set copy_count = copy_count + 1 where id = p_snippet_id;
+  end if;
+
+  return true;
 end;
 $$;
 
-create or replace function public.increment_snippet_copy(
-  p_snippet_id uuid,
-  p_public_only boolean default false
-)
-returns boolean
+revoke all on function public.increment_snippet_counter(uuid, text) from public, anon;
+grant execute on function public.increment_snippet_counter(uuid, text) to authenticated;
+
+-- ────────────────────────────────────────────
+-- ai chat rate limit
+-- ────────────────────────────────────────────
+create table if not exists public.ai_rate_limits (
+  user_id      uuid primary key references auth.users(id) on delete cascade,
+  window_start timestamptz not null default now(),
+  count        integer not null default 0
+);
+
+alter table public.ai_rate_limits enable row level security;
+
+create or replace function public.consume_ai_rate_limit(p_window_seconds integer, p_max integer)
+returns integer
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-  changed_rows integer;
+  v_row public.ai_rate_limits;
+  v_window interval := make_interval(secs => p_window_seconds);
 begin
-  if p_public_only then
-    update public.snippets
-    set copy_count = copy_count + 1
-    where id = p_snippet_id
-      and public = true;
-  else
-    update public.snippets
-    set copy_count = copy_count + 1
-    where id = p_snippet_id
-      and user_id = auth.uid();
+  if auth.uid() is null then
+    raise exception 'not authenticated';
   end if;
 
-  get diagnostics changed_rows = row_count;
-  return changed_rows > 0;
+  insert into public.ai_rate_limits as r (user_id, window_start, count)
+  values (auth.uid(), now(), 1)
+  on conflict (user_id) do update set
+    window_start = case when r.window_start <= now() - v_window then now() else r.window_start end,
+    count = case when r.window_start <= now() - v_window then 1 else r.count + 1 end
+  returning * into v_row;
+
+  if v_row.count > p_max then
+    return greatest(1, ceil(extract(epoch from v_row.window_start + v_window - now()))::integer);
+  end if;
+
+  return 0;
 end;
 $$;
 
-revoke all on function public.increment_snippet_view(uuid, boolean) from public;
-revoke all on function public.increment_snippet_copy(uuid, boolean) from public;
-grant execute on function public.increment_snippet_view(uuid, boolean) to anon, authenticated;
-grant execute on function public.increment_snippet_copy(uuid, boolean) to anon, authenticated;
+revoke all on function public.consume_ai_rate_limit(integer, integer) from public, anon;
+grant execute on function public.consume_ai_rate_limit(integer, integer) to authenticated;
 
 -- ────────────────────────────────────────────
 -- migration: add missing columns to existing snippets table

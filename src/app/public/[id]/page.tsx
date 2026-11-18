@@ -11,8 +11,7 @@ import { WorkspaceSideNav } from "@/components/workspace-side-nav";
 import { formatSnippetForCopy, type SnippetCopyMode } from "@/lib/copy-modes";
 import {
   getPublicSnippetById,
-  incrementPublicSnippetCopyCount,
-  incrementPublicSnippetViewCount,
+  incrementSnippetCounter,
 } from "@/lib/snippet-service";
 import { timeAgo } from "@/lib/time";
 import type { SnippetWithTags } from "@/lib/types";
@@ -69,7 +68,7 @@ export default function PublicSnippetPage() {
         current ? { ...current, view_count: current.view_count + 1 } : current
       );
     });
-    void incrementPublicSnippetViewCount(snippet.id);
+    void incrementSnippetCounter(snippet.id, "view");
   }, [snippet]);
 
   async function copyCode() {
@@ -83,7 +82,7 @@ export default function PublicSnippetPage() {
       });
 
       await navigator.clipboard.writeText(text);
-      void incrementPublicSnippetCopyCount(snippet.id);
+      void incrementSnippetCounter(snippet.id, "copy");
       setSnippet((current) =>
         current ? { ...current, copy_count: current.copy_count + 1 } : current
       );

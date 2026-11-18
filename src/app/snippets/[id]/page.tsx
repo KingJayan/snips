@@ -32,8 +32,7 @@ import { LANGUAGE_OPTIONS } from "@/lib/constants";
 import {
   deleteSnippet,
   getSnippetById,
-  incrementSnippetCopyCount,
-  incrementSnippetViewCount,
+  incrementSnippetCounter,
   listSnippets,
   togglePinSnippet,
   togglePublicSnippet,
@@ -139,7 +138,7 @@ export default function SnippetDetailPage() {
       });
 
       await navigator.clipboard.writeText(text);
-      void incrementSnippetCopyCount(snippet.id);
+      void incrementSnippetCounter(snippet.id, "copy");
       setSnippet((current) =>
         current ? { ...current, copy_count: current.copy_count + 1 } : current
       );
@@ -214,7 +213,7 @@ export default function SnippetDetailPage() {
     setSnippet((current) =>
       current ? { ...current, view_count: current.view_count + 1 } : current
     );
-    void incrementSnippetViewCount(snippet.id);
+    void incrementSnippetCounter(snippet.id, "view");
   }, [snippet]);
 
   useEffect(() => {

@@ -3,7 +3,6 @@ import { computeSnippetBenchmarks } from "@/lib/snippet-benchmarks";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type {
   ServiceResult,
-  Snippet,
   SnippetDraft,
   SnippetSummaryWithTags,
   SnippetWithTags,
@@ -11,19 +10,19 @@ import type {
   Workspace,
 } from "@/lib/types";
 
-type SnippetRow = Snippet & {
-  snippet_tags?: Array<{
-    tags: Tag | Tag[] | null;
-  }>;
-};
-
-type SnippetSummaryRow = Omit<Snippet, "code"> & {
+type TagLinks = {
   snippet_tags?: Array<{
     tags: Tag | Tag[] | null;
   }>;
 };
 
 const MAX_LIST_ITEMS = 200;
+const SUMMARY_COLUMNS =
+  "id, user_id, workspace_id, title, language, description, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))";
+const SNIPPET_COLUMNS =
+  "id, user_id, workspace_id, title, language, description, code, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))";
+const WORKSPACE_COLUMNS = "id, owner_id, name, is_public, created_at, updated_at";
+const NOT_FOUND = "snippet not found";
 
 type ListSnippetsOptions = {
   signal?: AbortSignal;
@@ -34,8 +33,6 @@ type ListSnippetsOptions = {
 type GetSnippetOptions = {
   signal?: AbortSignal;
 };
-
-type WorkspaceRow = Workspace;
 
 function withError<T>(error: unknown): ServiceResult<T> {
   if (
@@ -50,9 +47,9 @@ function withError<T>(error: unknown): ServiceResult<T> {
       ? error.message
       : "something went wrong. please try again.";
 
-  if (message.toLowerCase().includes("jwt") || 
-      message.toLowerCase().includes("token") ||
-      message.toLowerCase().includes("session")) {
+  if (/auth session missing/i.test(message)) {
+    message = "you must sign in to continue";
+  } else if (/\bjwt\b|refresh token/i.test(message)) {
     message = "session expired. refresh the page and sign in again.";
   }
 
@@ -70,53 +67,29 @@ function requireClient() {
 }
 
 async function requireUserId(client: NonNullable<typeof supabase>) {
-  const {
-    data: { user },
-    error,
-  } = await client.auth.getUser();
+  const { data } = await client.auth.getSession();
+  const userId = data.session?.user.id;
 
-  if (error) {
-    if (error.message.toLowerCase().includes("jwt") || 
-        error.message.toLowerCase().includes("token")) {
-      throw new Error("session expired. refresh the page and sign in again.");
-    }
-    throw new Error(error.message);
-  }
-
-  if (!user) {
+  if (!userId) {
     throw new Error("you must sign in to manage snippets");
   }
 
-  return user.id;
-}
-
-function normalizeTags(tagNames: string[]) {
-  return [...new Set(tagNames.map((tag) => tag.trim().toLowerCase()).filter(Boolean))];
+  return userId;
 }
 
 function normalizeWorkspaceName(name: string) {
   return name.trim().replace(/\s+/g, " ");
 }
 
-function normalizeWorkspace(row: WorkspaceRow): Workspace {
-  return {
-    id: row.id,
-    owner_id: row.owner_id,
-    name: row.name,
-    is_public: row.is_public,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  };
-}
-
 export async function listWorkspaces(): Promise<ServiceResult<Workspace[]>> {
   try {
     const client = requireClient();
-    await requireUserId(client);
+    const userId = await requireUserId(client);
 
     const { data, error } = await client
       .from("workspaces")
-      .select("id, owner_id, name, is_public, created_at, updated_at")
+      .select(WORKSPACE_COLUMNS)
+      .eq("owner_id", userId)
       .order("updated_at", { ascending: false });
 
     if (error) {
@@ -124,7 +97,7 @@ export async function listWorkspaces(): Promise<ServiceResult<Workspace[]>> {
     }
 
     return {
-      data: (data as WorkspaceRow[]).map(normalizeWorkspace),
+      data: data as Workspace[],
       error: null,
     };
   } catch (error) {
@@ -145,14 +118,14 @@ export async function createWorkspace(name: string): Promise<ServiceResult<Works
     const { data, error } = await client
       .from("workspaces")
       .insert({ owner_id: userId, name: normalizedName })
-      .select("id, owner_id, name, is_public, created_at, updated_at")
+      .select(WORKSPACE_COLUMNS)
       .single();
 
     if (error) {
       throw new Error(parseSupabaseError(error) ?? "failed to create workspace");
     }
 
-    return { data: normalizeWorkspace(data as WorkspaceRow), error: null };
+    return { data: data as Workspace, error: null };
   } catch (error) {
     return withError<Workspace>(error);
   }
@@ -229,97 +202,13 @@ export async function deleteWorkspace(id: string): Promise<ServiceResult<boolean
   }
 }
 
-function normalizeSnippet(row: SnippetRow): SnippetWithTags {
+function normalizeSnippet<T extends TagLinks>({ snippet_tags, ...row }: T) {
   const tags =
-    row.snippet_tags
-      ?.flatMap((item) => {
-        if (!item.tags) {
-          return [];
-        }
-
-        return Array.isArray(item.tags) ? item.tags : [item.tags];
-      })
+    snippet_tags
+      ?.flatMap((item) => (Array.isArray(item.tags) ? item.tags : item.tags ? [item.tags] : []))
       .filter((tag): tag is Tag => Boolean(tag?.id && tag?.name)) ?? [];
 
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    workspace_id: row.workspace_id,
-    title: row.title,
-    language: row.language,
-    description: row.description,
-    code: row.code,
-    pinned: row.pinned,
-    public: row.public,
-    benchmark_chars: row.benchmark_chars,
-    benchmark_bytes: row.benchmark_bytes,
-    benchmark_bits: row.benchmark_bits,
-    benchmark_lines: row.benchmark_lines,
-    view_count: row.view_count,
-    copy_count: row.copy_count,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    tags,
-  };
-}
-
-function normalizeSnippetSummary(row: SnippetSummaryRow): SnippetSummaryWithTags {
-  const tags =
-    row.snippet_tags
-      ?.flatMap((item) => {
-        if (!item.tags) {
-          return [];
-        }
-
-        return Array.isArray(item.tags) ? item.tags : [item.tags];
-      })
-      .filter((tag): tag is Tag => Boolean(tag?.id && tag?.name)) ?? [];
-
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    workspace_id: row.workspace_id,
-    title: row.title,
-    language: row.language,
-    description: row.description,
-    pinned: row.pinned,
-    public: row.public,
-    benchmark_chars: row.benchmark_chars,
-    benchmark_bytes: row.benchmark_bytes,
-    benchmark_bits: row.benchmark_bits,
-    benchmark_lines: row.benchmark_lines,
-    view_count: row.view_count,
-    copy_count: row.copy_count,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    tags,
-  };
-}
-
-async function upsertTags(client: NonNullable<typeof supabase>, tagNames: string[]) {
-  const normalized = normalizeTags(tagNames);
-  if (normalized.length === 0) {
-    return [] as Tag[];
-  }
-
-  const { error: upsertError } = await client
-    .from("tags")
-    .upsert(normalized.map((name) => ({ name })), { onConflict: "name", ignoreDuplicates: true });
-
-  if (upsertError) {
-    throw new Error(upsertError.message);
-  }
-
-  const { data, error } = await client
-    .from("tags")
-    .select("id, name")
-    .in("name", normalized);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as Tag[];
+  return { ...row, tags };
 }
 
 function parseSupabaseError(error: PostgrestError | null) {
@@ -355,29 +244,22 @@ export async function listSnippets(
 ): Promise<ServiceResult<SnippetSummaryWithTags[]>> {
   try {
     const client = requireClient();
-    await requireUserId(client);
-
-    const requestedLimit =
-      typeof options?.limit === "number" && options.limit > 0
-        ? Math.min(options.limit, MAX_LIST_ITEMS)
-        : MAX_LIST_ITEMS;
+    const userId = await requireUserId(client);
 
     let query = client
       .from("snippets")
-      .select(
-        "id, user_id, workspace_id, title, language, description, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))"
-      )
+      .select(SUMMARY_COLUMNS)
+      .eq("user_id", userId)
       .order("pinned", { ascending: false })
       .order("updated_at", { ascending: false })
-      .limit(requestedLimit);
+      .limit(listLimit(options));
 
     if (options?.workspaceId) {
       query = query.eq("workspace_id", options.workspaceId);
     }
 
-    if (options?.signal && typeof (query as { abortSignal?: unknown }).abortSignal === "function") {
-      query = (query as unknown as { abortSignal: (signal: AbortSignal) => typeof query })
-        .abortSignal(options.signal);
+    if (options?.signal) {
+      query = query.abortSignal(options.signal);
     }
 
     const { data, error } = await query;
@@ -386,13 +268,41 @@ export async function listSnippets(
       throw new Error(parseSupabaseError(error) ?? "failed to fetch snippets");
     }
 
-    return {
-      data: (data as SnippetSummaryRow[]).map(normalizeSnippetSummary),
-      error: null,
-    };
+    return { data: data.map(normalizeSnippet) as SnippetSummaryWithTags[], error: null };
   } catch (error) {
     return withError<SnippetSummaryWithTags[]>(error);
   }
+}
+
+function listLimit(options?: ListSnippetsOptions) {
+  return typeof options?.limit === "number" && options.limit > 0
+    ? Math.min(options.limit, MAX_LIST_ITEMS)
+    : MAX_LIST_ITEMS;
+}
+
+async function fetchSnippet(id: string, options?: GetSnippetOptions & { publicOnly?: boolean }) {
+  const client = requireClient();
+  let query = client.from("snippets").select(SNIPPET_COLUMNS).eq("id", id);
+
+  if (options?.publicOnly) {
+    query = query.eq("public", true);
+  }
+
+  if (options?.signal) {
+    query = query.abortSignal(options.signal);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) {
+    throw new Error(parseSupabaseError(error) ?? "failed to fetch snippet");
+  }
+
+  if (!data) {
+    throw new Error(NOT_FOUND);
+  }
+
+  return normalizeSnippet(data) as SnippetWithTags;
 }
 
 export async function getSnippetById(
@@ -400,95 +310,47 @@ export async function getSnippetById(
   options?: GetSnippetOptions
 ): Promise<ServiceResult<SnippetWithTags>> {
   try {
-    const client = requireClient();
-    await requireUserId(client);
-
-    let query = client
-      .from("snippets")
-      .select(
-        "id, user_id, workspace_id, title, language, description, code, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))"
-      )
-      .eq("id", id)
-      .single();
-
-    if (options?.signal && typeof (query as { abortSignal?: unknown }).abortSignal === "function") {
-      query = (query as unknown as { abortSignal: (signal: AbortSignal) => typeof query })
-        .abortSignal(options.signal);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw new Error(parseSupabaseError(error) ?? "failed to fetch snippet");
-    }
-
-    return {
-      data: normalizeSnippet(data as SnippetRow),
-      error: null,
-    };
+    return { data: await fetchSnippet(id, options), error: null };
   } catch (error) {
     return withError<SnippetWithTags>(error);
   }
+}
+
+async function saveSnippet(id: string | null, draft: SnippetDraft) {
+  const client = requireClient();
+  await requireUserId(client);
+
+  if (!id && !draft.workspace_id) {
+    throw new Error("workspace is required");
+  }
+
+  const benchmarks = computeSnippetBenchmarks(draft.code);
+  const { data, error } = await client.rpc("save_snippet", {
+    p_id: id,
+    p_workspace_id: draft.workspace_id ?? null,
+    p_title: draft.title.trim(),
+    p_language: draft.language,
+    p_description: draft.description.trim(),
+    p_code: draft.code,
+    p_benchmark_chars: benchmarks.benchmark_chars,
+    p_benchmark_bytes: benchmarks.benchmark_bytes,
+    p_benchmark_bits: benchmarks.benchmark_bits,
+    p_benchmark_lines: benchmarks.benchmark_lines,
+    p_tags: draft.tags,
+  });
+
+  if (error) {
+    throw new Error(parseSupabaseError(error) ?? "failed to save snippet");
+  }
+
+  return fetchSnippet(data as string);
 }
 
 export async function createSnippet(
   draft: SnippetDraft
 ): Promise<ServiceResult<SnippetWithTags>> {
   try {
-    const client = requireClient();
-    const userId = await requireUserId(client);
-
-    if (!draft.workspace_id) {
-      throw new Error("workspace is required");
-    }
-
-    const benchmarks = computeSnippetBenchmarks(draft.code);
-
-    const { data, error } = await client
-      .from("snippets")
-      .insert({
-        user_id: userId,
-        workspace_id: draft.workspace_id,
-        title: draft.title.trim(),
-        language: draft.language,
-        description: draft.description.trim(),
-        code: draft.code,
-        benchmark_chars: benchmarks.benchmark_chars,
-        benchmark_bytes: benchmarks.benchmark_bytes,
-        benchmark_bits: benchmarks.benchmark_bits,
-        benchmark_lines: benchmarks.benchmark_lines,
-        view_count: 0,
-        copy_count: 0,
-      })
-      .select("id, user_id, workspace_id, title, language, description, code, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at")
-      .single();
-
-    if (error) {
-      throw new Error(parseSupabaseError(error) ?? "failed to create snippet");
-    }
-
-    const tags = await upsertTags(client, draft.tags);
-
-    if (tags.length > 0) {
-      const { error: mapError } = await client.from("snippet_tags").insert(
-        tags.map((tag) => ({
-          snippet_id: (data as Snippet).id,
-          tag_id: tag.id,
-        }))
-      );
-
-      if (mapError) {
-        throw new Error(parseSupabaseError(mapError) ?? "failed to attach tags");
-      }
-    }
-
-    return {
-      data: {
-        ...(data as Snippet),
-        tags,
-      },
-      error: null,
-    };
+    return { data: await saveSnippet(null, draft), error: null };
   } catch (error) {
     return withError<SnippetWithTags>(error);
   }
@@ -499,64 +361,7 @@ export async function updateSnippet(
   draft: SnippetDraft
 ): Promise<ServiceResult<SnippetWithTags>> {
   try {
-    const client = requireClient();
-    const userId = await requireUserId(client);
-    const benchmarks = computeSnippetBenchmarks(draft.code);
-
-    const { data, error } = await client
-      .from("snippets")
-      .update({
-        title: draft.title.trim(),
-        language: draft.language,
-        description: draft.description.trim(),
-        code: draft.code,
-        benchmark_chars: benchmarks.benchmark_chars,
-        benchmark_bytes: benchmarks.benchmark_bytes,
-        benchmark_bits: benchmarks.benchmark_bits,
-        benchmark_lines: benchmarks.benchmark_lines,
-      })
-      .eq("id", id)
-      .eq("user_id", userId)
-      .select("id, user_id, workspace_id, title, language, description, code, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at")
-      .single();
-
-    if (error) {
-      throw new Error(parseSupabaseError(error) ?? "failed to update snippet");
-    }
-
-    const tags = await upsertTags(client, draft.tags);
-
-    const { error: deleteMapError } = await client
-      .from("snippet_tags")
-      .delete()
-      .eq("snippet_id", id);
-
-    if (deleteMapError) {
-      throw new Error(
-        parseSupabaseError(deleteMapError) ?? "failed to refresh tag links"
-      );
-    }
-
-    if (tags.length > 0) {
-      const { error: mapError } = await client.from("snippet_tags").insert(
-        tags.map((tag) => ({
-          snippet_id: id,
-          tag_id: tag.id,
-        }))
-      );
-
-      if (mapError) {
-        throw new Error(parseSupabaseError(mapError) ?? "failed to attach tags");
-      }
-    }
-
-    return {
-      data: {
-        ...(data as Snippet),
-        tags,
-      },
-      error: null,
-    };
+    return { data: await saveSnippet(id, draft), error: null };
   } catch (error) {
     return withError<SnippetWithTags>(error);
   }
@@ -661,24 +466,15 @@ export async function listPublicSnippets(
   try {
     const client = requireClient();
 
-    const requestedLimit =
-      typeof options?.limit === "number" && options.limit > 0
-        ? Math.min(options.limit, MAX_LIST_ITEMS)
-        : MAX_LIST_ITEMS;
-
     let query = client
       .from("snippets")
-      .select(
-        "id, user_id, workspace_id, title, language, description, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))"
-      )
+      .select(SUMMARY_COLUMNS)
       .eq("public", true)
-      .order("pinned", { ascending: false })
       .order("updated_at", { ascending: false })
-      .limit(requestedLimit);
+      .limit(listLimit(options));
 
-    if (options?.signal && typeof (query as { abortSignal?: unknown }).abortSignal === "function") {
-      query = (query as unknown as { abortSignal: (signal: AbortSignal) => typeof query })
-        .abortSignal(options.signal);
+    if (options?.signal) {
+      query = query.abortSignal(options.signal);
     }
 
     const { data, error } = await query;
@@ -687,10 +483,7 @@ export async function listPublicSnippets(
       throw new Error(parseSupabaseError(error) ?? "failed to fetch public snippets");
     }
 
-    return {
-      data: (data as SnippetSummaryRow[]).map(normalizeSnippetSummary),
-      error: null,
-    };
+    return { data: data.map(normalizeSnippet) as SnippetSummaryWithTags[], error: null };
   } catch (error) {
     return withError<SnippetSummaryWithTags[]>(error);
   }
@@ -700,85 +493,27 @@ export async function getPublicSnippetById(
   id: string
 ): Promise<ServiceResult<SnippetWithTags>> {
   try {
-    const client = requireClient();
-
-    const { data, error } = await client
-      .from("snippets")
-      .select(
-        "id, user_id, workspace_id, title, language, description, code, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))"
-      )
-      .eq("id", id)
-      .eq("public", true)
-      .single();
-
-    if (error) {
-      throw new Error(parseSupabaseError(error) ?? "snippet not found or not public");
-    }
-
-    return {
-      data: normalizeSnippet(data as SnippetRow),
-      error: null,
-    };
+    return { data: await fetchSnippet(id, { publicOnly: true }), error: null };
   } catch (error) {
     return withError<SnippetWithTags>(error);
   }
 }
 
-async function bumpCounter(id: string, field: "view_count" | "copy_count", publicOnly = false) {
-  const client = requireClient();
-
-  const rpcName = field === "view_count" ? "increment_snippet_view" : "increment_snippet_copy";
-  const { data, error } = await client.rpc(rpcName, {
-    p_snippet_id: id,
-    p_public_only: publicOnly,
-  });
-
-  if (error) {
-    throw new Error(parseSupabaseError(error) ?? `failed to update ${field}`);
-  }
-
-  if (data !== true) {
-    throw new Error(`failed to update ${field}`);
-  }
-}
-
-export async function incrementSnippetViewCount(id: string): Promise<ServiceResult<boolean>> {
+export async function incrementSnippetCounter(
+  id: string,
+  kind: "view" | "copy"
+): Promise<ServiceResult<boolean>> {
   try {
-    const client = requireClient();
-    await requireUserId(client);
-    await bumpCounter(id, "view_count", false);
-    return { data: true, error: null };
-  } catch (error) {
-    return withError<boolean>(error);
-  }
-}
+    const { data, error } = await requireClient().rpc("increment_snippet_counter", {
+      p_snippet_id: id,
+      p_kind: kind,
+    });
 
-export async function incrementSnippetCopyCount(id: string): Promise<ServiceResult<boolean>> {
-  try {
-    const client = requireClient();
-    await requireUserId(client);
-    await bumpCounter(id, "copy_count", false);
-    return { data: true, error: null };
-  } catch (error) {
-    return withError<boolean>(error);
-  }
-}
+    if (error) {
+      throw new Error(parseSupabaseError(error) ?? `failed to update ${kind} count`);
+    }
 
-export async function incrementPublicSnippetViewCount(id: string): Promise<ServiceResult<boolean>> {
-  try {
-    requireClient();
-    await bumpCounter(id, "view_count", true);
-    return { data: true, error: null };
-  } catch (error) {
-    return withError<boolean>(error);
-  }
-}
-
-export async function incrementPublicSnippetCopyCount(id: string): Promise<ServiceResult<boolean>> {
-  try {
-    requireClient();
-    await bumpCounter(id, "copy_count", true);
-    return { data: true, error: null };
+    return { data: data === true, error: null };
   } catch (error) {
     return withError<boolean>(error);
   }
