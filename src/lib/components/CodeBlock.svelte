@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Copy, LoaderCircle, Palette } from "@lucide/svelte";
+  import { LoaderCircle, Palette } from "@lucide/svelte";
   import { CODE_THEMES, cacheKey, cachedHighlight, codeTheme, highlight, type CodeTheme } from "#lib/code-highlight.ts";
   import { boolSetting, SETTINGS_KEYS, stringSetting } from "#lib/settings.ts";
   import { cn } from "#lib/utils.ts";
@@ -13,7 +13,6 @@
 
   let result = $state<{ key: string; html: string | null; error: string | null } | null>(null);
   let showThemes = $state(false);
-  let copyLabel = $state("copy");
 
   const html = $derived(cachedHighlight(key) ?? (result?.key === key ? result.html : null));
   const error = $derived(!html && result?.key === key ? result.error : null);
@@ -26,11 +25,6 @@
       .catch(() => !cancelled && (result = { key: current, html: null, error: "highlight unavailable. showing plain code." }));
     return () => (cancelled = true);
   });
-
-  async function copy() {
-    copyLabel = await navigator.clipboard.writeText(code).then(() => "copied", () => "failed");
-    setTimeout(() => (copyLabel = "copy"), 1200);
-  }
 
   function closeThemes(event: MouseEvent) {
     if (!(event.target as HTMLElement).closest("[data-theme-selector]")) showThemes = false;
@@ -69,10 +63,6 @@
           </div>
         {/if}
       </div>
-      <button class="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs opacity-70 hover:opacity-100" onclick={copy} aria-label="copy code">
-        <Copy class="size-3" />
-        {copyLabel}
-      </button>
     </div>
   </div>
 

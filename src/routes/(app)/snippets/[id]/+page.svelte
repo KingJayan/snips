@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Globe, LoaderCircle, Lock, PanelRightOpen, Pencil, Pin, Play, Share2, Trash } from "@lucide/svelte";
+  import { Globe, LoaderCircle, Lock, PanelRightOpen, Pencil, Pin, Share2, Trash } from "@lucide/svelte";
   import { fly } from "svelte/transition";
   import { beforeNavigate, goto } from "$app/navigation";
   import { page } from "$app/state";
@@ -23,7 +23,8 @@
   import type { ServiceResult, SnippetDraft, SnippetWithTags } from "#lib/types.ts";
   import { ignoresShortcuts } from "#lib/utils.ts";
 
-  const CODE_HEIGHT = "h-[50vh] min-h-[280px] sm:h-[56vh] sm:min-h-[360px] lg:h-[62vh] lg:max-h-[780px]";
+  const TOGGLE = "text-muted-foreground aria-pressed:bg-accent aria-pressed:text-foreground";
+  const CODE_HEIGHT ="h-[50vh] min-h-[280px] sm:h-[56vh] sm:min-h-[360px] lg:h-[62vh] lg:max-h-[780px]";
 
   const aiDefault = boolSetting(SETTINGS_KEYS.aiPanelOpenByDefault, true);
   const vim = boolSetting(SETTINGS_KEYS.vimShortcuts);
@@ -172,16 +173,16 @@
   <main class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:gap-6 sm:py-8">
 
     <SnippetActions bind:this={actions} snippet={current} onCopied={() => (current.copy_count += 1)}>
-      <Button variant="outline" size="icon-sm" href="/playground/{current.id}" aria-label="playground" tip="playground"><Play class="size-4" /></Button>
-      <Button variant="outline" size="icon-sm" onclick={() => share(current)} aria-label="share" tip="share"><Share2 class="size-4" /></Button>
-      <Button variant={current.public ? "default" : "outline"} size="icon-sm" onclick={() => togglePublic(current)} aria-label={current.public ? "public" : "private"} tip={current.public ? "public" : "private"}>
+      <Button variant="outline" size="icon-sm" onclick={() => share(current)} aria-label="copy link" tip="copy link"><Share2 class="size-4" /></Button>
+      <Button variant="ghost" size="icon-sm" class={TOGGLE} onclick={() => togglePublic(current)} aria-pressed={current.public} aria-label="public" tip={current.public ? "public" : "private"}>
         {#if current.public}<Globe class="size-4" />{:else}<Lock class="size-4" />{/if}
       </Button>
-      <Button variant={current.pinned ? "default" : "outline"} size="icon-sm" onclick={() => togglePin(current)} aria-label={current.pinned ? "pinned" : "pin"} tip={current.pinned ? "pinned" : "pin"}>
+      <Button variant="ghost" size="icon-sm" class={TOGGLE} onclick={() => togglePin(current)} aria-pressed={current.pinned} aria-label="pinned" tip={current.pinned ? "pinned" : "pin"}>
         <Pin class="size-4 {current.pinned ? 'fill-current' : ''}" />
       </Button>
       <Button variant="outline" size="icon-sm" onclick={() => startEditing()} aria-label="edit" tip="edit"><Pencil class="size-4" /></Button>
-      <Button variant="destructive" size="icon-sm" onclick={() => remove(current)} disabled={deleting} aria-label="delete" tip="delete">
+      <span class="mx-1 h-5 w-px bg-border" aria-hidden="true"></span>
+      <Button variant="ghost" size="icon-sm" class="text-destructive hover:bg-destructive/10 hover:text-destructive" onclick={() => remove(current)} disabled={deleting} aria-label="delete" tip="delete">
         {#if deleting}<LoaderCircle class="size-4 animate-spin" />{:else}<Trash class="size-4" />{/if}
       </Button>
     </SnippetActions>
