@@ -2,7 +2,7 @@ import { CHAT_MODES } from "#lib/ai/chat-config.ts";
 import { CODE_THEMES } from "#lib/code-highlight.ts";
 import { SETTINGS_KEYS } from "#lib/settings.ts";
 
-export type SettingsGroup = "personalization" | "ai" | "preferences" | "performance" | "accessibility";
+export type SettingsGroup = "personalization" | "ai" | "preferences" | "accessibility";
 
 type Base = { key: string; label: string; desc?: string; terms: string[]; preset?: boolean };
 export type ToggleItem = Base & { kind: "toggle"; fallback?: boolean };
@@ -21,7 +21,7 @@ export const PRESETS: Record<string, Record<string, string | boolean>> = {
 };
 PRESETS.expressive = PRESETS.balanced;
 
-export const GROUPS: Record<Exclude<SettingsGroup, "performance">, SettingItem[]> = {
+export const GROUPS: Record<SettingsGroup, SettingItem[]> = {
   personalization: [
     { kind: "select", key: SETTINGS_KEYS.personalizationPreset, label: "personalization preset", desc: "practical presets for look + workflow defaults.", fallback: "balanced", options: opts("balanced", "focused", "expressive", "custom"), terms: ["preset", "personalization", "focused", "balanced", "expressive"] },
     { kind: "select", key: SETTINGS_KEYS.uiDensity, label: "ui density", fallback: "comfortable", options: opts("comfortable", "compact"), preset: true, terms: ["density", "spacing", "compact", "comfortable"] },

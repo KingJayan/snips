@@ -27,7 +27,7 @@
 <dialog
   bind:this={dialog}
   class={cn(
-    "app-dialog fixed inset-0 m-auto h-fit w-full max-w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-lg border bg-background p-0 text-foreground shadow-lg outline-none theme-scrollbar sm:max-w-lg vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow",
+    "app-dialog fixed inset-0 m-auto h-fit w-full max-w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-lg border bg-background p-0 text-foreground shadow-lg outline-none theme-scrollbar sm:max-w-lg",
     className
   )}
   onclose={() => (open = false)}

@@ -70,7 +70,7 @@
 </script>
 
 <aside class={cn("sticky top-20 hidden h-[calc(100svh-6rem)] shrink-0 transition-[width] duration-200 ease-out lg:block", tiny ? "w-11" : "w-56")}>
-  <div class={cn("flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/80 vfx-surface vfx-glass", tiny ? "items-center p-1.5" : "p-2")}>
+  <div class={cn("flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/80", tiny ? "items-center p-1.5" : "p-2")}>
     <div class={cn("flex shrink-0 items-center pt-1 pb-2", tiny ? "justify-center" : "justify-between pl-2.5")}>
       {#if !tiny}<span class="text-xs font-medium text-muted-foreground">workspaces</span>{/if}
       <button
@@ -154,7 +154,7 @@
 </aside>
 
 <aside class="fixed inset-x-3 bottom-4 z-40 lg:hidden">
-  <div class="flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-border/45 bg-card/80 p-2 shadow-[0_10px_24px_-18px_hsl(var(--foreground)/0.35)] backdrop-blur theme-scrollbar vfx-surface vfx-glass">
+  <div class="flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-border/45 bg-card/80 p-2 shadow-[0_10px_24px_-18px_hsl(var(--foreground)/0.35)] backdrop-blur theme-scrollbar">
     {#each workspaces as workspace (workspace.id)}
       <button
         onclick={() => onSelect(workspace.id)}

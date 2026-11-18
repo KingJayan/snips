@@ -29,17 +29,6 @@
           var anim = ls.getItem("snips.pref.animation-level");
           if (anim === "reduced") root.classList.add("pref-anim-reduced");
           if (anim === "minimal") root.classList.add("pref-anim-minimal");
-          var mode = ls.getItem("snips.perf.low-hardware");
-          var low = ["low-hw-no-cursor-tracking", "low-hw-no-backdrop-filter", "low-hw-no-shadows", "low-hw-no-sheen", "low-hw-reduce-animations"];
-          if (mode === "custom") {
-            var c = JSON.parse(ls.getItem("snips.perf.custom-profile") || "{}");
-            [c.disableCursorTracking, c.disableBackdropFilter, c.disableShadows, c.disableSheenEffects, c.reduceAnimationDuration].forEach(function (on, i) {
-              if (on) root.classList.add(low[i]);
-            });
-            return;
-          }
-          var lowEnd = mode === "low" || (mode !== "normal" && ((navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 4)));
-          if (lowEnd) low.forEach(function (cls) { root.classList.add(cls); });
         } catch (e) {}
       })();
     </script>

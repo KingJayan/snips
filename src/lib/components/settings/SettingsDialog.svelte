@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { Accessibility, Palette, Search, SlidersHorizontal, Sparkles, Zap } from "@lucide/svelte";
+  import { Accessibility, Palette, Search, SlidersHorizontal, Sparkles } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { APP_VERSION } from "#lib/app-version.ts";
   import { settingsDialog } from "#lib/settings-dialog.svelte.ts";
   import { cn } from "#lib/utils.ts";
   import Dialog from "../ui/Dialog.svelte";
-  import PerfSettings from "./PerfSettings.svelte";
   import SettingRow from "./SettingRow.svelte";
   import { GROUPS, LABELS, type SettingsGroup } from "./schema";
 
@@ -14,7 +13,6 @@
     { id: "personalization", label: "personal", icon: Palette },
     { id: "ai", label: "ai", icon: Sparkles },
     { id: "preferences", label: "prefs", icon: SlidersHorizontal },
-    { id: "performance", label: "perf", icon: Zap },
     { id: "accessibility", label: "a11y", icon: Accessibility },
   ];
 
@@ -23,7 +21,7 @@
   let recent = $state<string[]>([]);
 
   const needle = $derived(query.trim().toLowerCase());
-  const items = $derived(group === "performance" ? [] : GROUPS[group].filter((item) => !needle || item.terms.some((term) => term.includes(needle))));
+  const items = $derived(GROUPS[group].filter((item) => !needle || item.terms.some((term) => term.includes(needle))));
 
   function remember(label: string) {
     recent = [label, ...recent.filter((entry) => entry !== label)].slice(0, 6);
@@ -45,13 +43,10 @@
       const key = (event as CustomEvent<{ key?: string }>).detail?.key;
       if (key) remember(LABELS[key] ?? key);
     };
-    const onHardware = () => remember("performance mode");
     window.addEventListener("snips-settings-changed", onSetting);
-    window.addEventListener("snips-hardware-preference-changed", onHardware);
     return () => {
       window.removeEventListener("snips-settings-changed", onSetting);
-      window.removeEventListener("snips-hardware-preference-changed", onHardware);
-    };
+      };
   });
 </script>
 
@@ -85,13 +80,9 @@
             {/each}
           </section>
         {/if}
-        {#if group === "performance"}
-          <PerfSettings />
-        {:else}
           {#each items as item (item.key)}
             <SettingRow {item} />
           {/each}
-        {/if}
       </div>
     {/key}
   </div>

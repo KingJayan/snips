@@ -40,9 +40,9 @@
 {#if allowed}
   <div class="pointer-events-none fixed bottom-4 left-4 z-[85]">
     {#if !open}
-      <Button size="icon-sm" variant="outline" class="pointer-events-auto vfx-icon-chip" onclick={() => (open = true)} aria-label="open dev panel"><Bug class="size-4" /></Button>
+      <Button size="icon-sm" variant="outline" class="pointer-events-auto" onclick={() => (open = true)} aria-label="open dev panel"><Bug class="size-4" /></Button>
     {:else}
-      <section class="pointer-events-auto w-[300px] rounded-xl border border-border/70 bg-card/95 p-3 text-xs shadow-lg backdrop-blur vfx-surface vfx-edge-light vfx-float-shadow">
+      <section class="pointer-events-auto w-[300px] rounded-xl border border-border/70 bg-card/95 p-3 text-xs shadow-lg backdrop-blur">
         <header class="mb-2 flex items-center justify-between gap-2">
           <h2 class="flex items-center gap-1.5 font-medium"><Bug class="size-3.5" /> dev panel</h2>
           <Button size="icon-xs" variant="ghost" onclick={() => (open = false)} aria-label="close dev panel"><ChevronUp class="size-3" /></Button>

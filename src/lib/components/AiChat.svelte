@@ -74,7 +74,7 @@
   }
 </script>
 
-<aside class="flex h-full min-h-[520px] flex-col rounded-2xl border border-border/70 bg-card/70 animate-subtle-pop-in vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
+<aside class="flex h-full min-h-[520px] flex-col rounded-2xl border border-border/70 bg-card/70 animate-subtle-pop-in">
   <header class="border-b border-border/70 p-3">
     <div class="flex items-center justify-between gap-2">
       <h2 class="flex items-center gap-2 text-sm font-semibold tracking-tight"><Bot class="size-4" /> ai edits</h2>

@@ -8,7 +8,7 @@
   let { email = $bindable(), busy, message, error, onSubmit }: Props = $props();
 </script>
 
-<section class="mx-auto mt-16 w-full max-w-sm space-y-5 rounded-2xl border border-border/70 bg-card p-6 vfx-surface">
+<section class="mx-auto mt-16 w-full max-w-sm space-y-5 rounded-2xl border border-border/70 bg-card p-6">
   <div class="space-y-1">
     <h1 class="text-lg font-semibold tracking-tight">sign in to snips</h1>
     <p class="text-sm text-muted-foreground">we'll email you a link. no password needed.</p>

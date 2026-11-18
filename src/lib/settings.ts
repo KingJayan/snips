@@ -14,7 +14,6 @@ export const SETTINGS_KEYS = {
   uiDensity: "snips.pref.ui-density",
   animationLevel: "snips.pref.animation-level",
   codeTheme: "code-theme",
-  lowHardwareMode: "snips.perf.low-hardware",
 } as const;
 
 export type SettingKey = (typeof SETTINGS_KEYS)[keyof typeof SETTINGS_KEYS];

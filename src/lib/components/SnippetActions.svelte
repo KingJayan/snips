@@ -31,7 +31,7 @@
   }
 </script>
 
-<section class="sticky top-2 z-20 rounded-2xl border border-border/70 bg-card/90 p-2.5 backdrop-blur supports-[backdrop-filter]:bg-card/70 sm:p-3 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
+<section class="sticky top-2 z-20 rounded-2xl border border-border/70 bg-card/90 p-2.5 backdrop-blur supports-[backdrop-filter]:bg-card/70 sm:p-3">
   <div class="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
     <a href={back} class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground sm:text-sm"><ArrowLeft class="size-4" /> back</a>
     <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">

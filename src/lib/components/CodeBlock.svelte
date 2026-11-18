@@ -40,7 +40,7 @@
 <svelte:document onclick={showThemes ? closeThemes : undefined} />
 
 <section
-  class={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl shadow-xs vfx-surface vfx-sheen vfx-edge-light vfx-float-shadow", className)}
+  class={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl shadow-xs", className)}
   style:background-color={colors.bg}
   style:border="1px solid {colors.border}"
 >

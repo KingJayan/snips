@@ -186,7 +186,7 @@
       </Button>
     </SnippetActions>
 
-    <header class="space-y-2 rounded-2xl border border-border/70 p-3 sm:space-y-3 sm:p-4 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow {editing ? 'border-accent/50 bg-card/80' : 'bg-card/70'}">
+    <header class="space-y-2 rounded-2xl border border-border/70 p-3 sm:space-y-3 sm:p-4 {editing ? 'border-accent/50 bg-card/80' : 'bg-card/70'}">
       {#if editing}
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold tracking-tight text-muted-foreground">editing snippet</span>
@@ -215,7 +215,7 @@
         {/if}
 
         {#if editing}
-          <section class="rounded-2xl border border-accent/50 bg-card/70 p-3 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
+          <section class="rounded-2xl border border-accent/50 bg-card/70 p-3">
             <span class="mb-2 block text-xs font-semibold text-muted-foreground">code</span>
             <CodeEditor bind:value={editing.draft.code} language={editing.draft.language} class="{CODE_HEIGHT} overflow-hidden rounded-md border border-input" />
           </section>

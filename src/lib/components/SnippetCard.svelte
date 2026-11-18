@@ -31,7 +31,7 @@
   draggable="true"
   ondragstart={dragStart}
   ondragend={() => onDragEnd?.()}
-  class="snippet-card-shell group relative flex flex-col gap-2 rounded-lg border border-border/60 bg-card p-3 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md focus-within:ring-2 focus-within:ring-ring sm:gap-3 sm:p-4 motion-safe-enter vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow"
+  class="snippet-card-shell group relative flex flex-col gap-2 rounded-lg border border-border/60 bg-card p-3 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md focus-within:ring-2 focus-within:ring-ring sm:gap-3 sm:p-4 motion-safe-enter"
   data-selected={selected}
   aria-current={selected ? "true" : undefined}
   style:contain="layout style"
@@ -50,7 +50,7 @@
     <div class="relative z-10 flex shrink-0 items-center gap-1">
       <a
         href="/playground/{snippet.id}"
-        class="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground vfx-icon-chip"
+        class="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         aria-label="open in playground"
         title="open in playground"
       >
@@ -60,7 +60,7 @@
       {#if onTogglePin}
         <button
           onclick={() => onTogglePin(snippet.id, !snippet.pinned)}
-          class="rounded p-1 transition-colors hover:bg-accent vfx-icon-chip {snippet.pinned ? 'text-yellow-500' : 'text-muted-foreground'}"
+          class="rounded p-1 transition-colors hover:bg-accent {snippet.pinned ? 'text-yellow-500' : 'text-muted-foreground'}"
           aria-label={snippet.pinned ? "unpin" : "pin"}
         >
           <Pin class="size-3 {snippet.pinned ? 'fill-current' : ''}" />
@@ -70,7 +70,7 @@
       {#if onDelete}
         <button
           onclick={() => confirm(`delete "${snippet.title}"?`) && onDelete(snippet.id)}
-          class="rounded p-1 text-muted-foreground transition-colors pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 vfx-icon-chip"
+          class="rounded p-1 text-muted-foreground transition-colors pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
           aria-label="delete snippet"
         >
           <Trash class="size-3" />

@@ -54,7 +54,7 @@
 
 <svelte:window onbeforeunload={(e) => dirty && e.preventDefault()} />
 
-<section class="space-y-3 rounded-2xl border border-border/70 bg-card/70 p-3 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
+<section class="space-y-3 rounded-2xl border border-border/70 bg-card/70 p-3">
   <div class="flex flex-wrap items-center justify-between gap-2">
     <h2 class="text-sm font-semibold tracking-tight">playground</h2>
     <div class="flex items-center gap-2">
