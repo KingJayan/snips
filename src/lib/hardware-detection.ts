@@ -18,7 +18,6 @@ export interface PerformanceRecommendations {
   disableSheenEffects: boolean;
   reduceAnimationDuration: boolean;
   throttleMouseEvents: boolean;
-  throttleScrollEvents: boolean;
 }
 
 export interface CustomPerformanceProfile {
@@ -28,7 +27,6 @@ export interface CustomPerformanceProfile {
   disableSheenEffects: boolean;
   reduceAnimationDuration: boolean;
   throttleMouseEvents: boolean;
-  throttleScrollEvents: boolean;
 }
 
 const SETTINGS_KEY = "snips.perf.low-hardware";
@@ -41,7 +39,6 @@ const DEFAULT_CUSTOM_PROFILE: CustomPerformanceProfile = {
   disableSheenEffects: false,
   reduceAnimationDuration: false,
   throttleMouseEvents: false,
-  throttleScrollEvents: false,
 };
 
 type NavigatorHardware = Navigator & {
@@ -87,7 +84,6 @@ export function getPerformanceRecommendations(
       disableSheenEffects: custom.disableSheenEffects,
       reduceAnimationDuration: custom.reduceAnimationDuration,
       throttleMouseEvents: custom.throttleMouseEvents,
-      throttleScrollEvents: custom.throttleScrollEvents,
     };
   }
 
@@ -100,7 +96,6 @@ export function getPerformanceRecommendations(
       disableSheenEffects: false,
       reduceAnimationDuration: false,
       throttleMouseEvents: false,
-      throttleScrollEvents: false,
     };
   }
 
@@ -112,7 +107,6 @@ export function getPerformanceRecommendations(
     disableSheenEffects: true,
     reduceAnimationDuration: true,
     throttleMouseEvents: true,
-    throttleScrollEvents: true,
   };
 }
 
@@ -168,7 +162,6 @@ export function readCustomPerformanceProfile(): CustomPerformanceProfile {
       disableSheenEffects: !!parsed.disableSheenEffects,
       reduceAnimationDuration: !!parsed.reduceAnimationDuration,
       throttleMouseEvents: !!parsed.throttleMouseEvents,
-      throttleScrollEvents: !!parsed.throttleScrollEvents,
     };
   } catch {
     return DEFAULT_CUSTOM_PROFILE;

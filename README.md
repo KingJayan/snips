@@ -56,13 +56,8 @@ OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GEMINI_API_KEY=
 OPENROUTER_API_KEY=
-OPENAI_COMPATIBLE_API_KEY=
 # optional: enable dev debug panel for a specific account (dev only)
 DEV_OWNER_EMAIL=
-
-# optional server execution sandbox config (not used by default free mode)
-SNIPS_EXEC_PROVIDER=piston
-SNIPS_EXEC_PISTON_URL=
 ```
 
 3. run supabase/schema.sql and refresh api cache

@@ -59,13 +59,6 @@ export type Workspace = {
   updated_at: string;
 };
 
-export type WorkspaceMembership = {
-  workspace_id: string;
-  user_id: string;
-  role: "owner" | "editor" | "viewer";
-  created_at: string;
-};
-
 export type ServiceResult<T> = {
   data: T | null;
   error: string | null;

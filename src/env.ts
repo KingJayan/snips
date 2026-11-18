@@ -13,7 +13,4 @@ export const variables = defineEnvVars({
   ANTHROPIC_API_KEY: privateOptional,
   GEMINI_API_KEY: privateOptional,
   OPENROUTER_API_KEY: privateOptional,
-  OPENAI_COMPATIBLE_API_KEY: privateOptional,
-  SNIPS_EXEC_PROVIDER: privateOptional,
-  SNIPS_EXEC_PISTON_URL: privateOptional,
 });
