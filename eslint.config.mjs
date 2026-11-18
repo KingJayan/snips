@@ -1,18 +1,24 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import js from "@eslint/js";
+import svelte from "eslint-plugin-svelte";
+import globals from "globals";
+import ts from "typescript-eslint";
+import { defineConfig } from "eslint/config";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
-
-export default eslintConfig;
+export default defineConfig(
+  { ignores: [".svelte-kit/", ".vercel/", "build/"] },
+  js.configs.recommended,
+  ...ts.configs.recommended,
+  ...svelte.configs.recommended,
+  { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
+  {
+    files: ["**/*.svelte", "**/*.svelte.ts"],
+    languageOptions: { parserOptions: { projectService: true, extraFileExtensions: [".svelte"], parser: ts.parser } },
+  },
+  {
+    rules: {
+      "svelte/no-at-html-tags": "off",
+      "svelte/no-navigation-without-resolve": "off",
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", ignoreRestSiblings: true }],
+    },
+  }
+);

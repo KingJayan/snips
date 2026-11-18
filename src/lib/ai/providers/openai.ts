@@ -1,5 +1,5 @@
-import type { ChatRequestBody, ChatMessage } from "@/lib/ai/chat-types";
-import { fetchWithTimeout, parseOpenAIStyleReply, readProviderResponse, type ProviderResult } from "@/lib/ai/providers/shared";
+import type { ChatRequestBody, ChatMessage } from "#lib/ai/chat-types.ts";
+import { fetchWithTimeout, parseOpenAIStyleReply, readProviderResponse, type ProviderResult } from "#lib/ai/providers/shared.ts";
 
 export async function callOpenAIProvider(params: {
   body: ChatRequestBody;

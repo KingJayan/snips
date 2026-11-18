@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { createSubscriber } from "svelte/reactivity";
 
 export const SETTINGS_KEYS = {
   reducedMotion: "snips.a11y.reduced-motion",
@@ -91,19 +91,51 @@ export function emitSettingsChanged(key: string, value: string) {
   );
 }
 
-function subscribeSettings(callback: () => void) {
-  window.addEventListener("snips-settings-changed", callback);
-  window.addEventListener("storage", callback);
+const subscribe = createSubscriber((update) => {
+  window.addEventListener("snips-settings-changed", update);
+  window.addEventListener("storage", update);
   return () => {
-    window.removeEventListener("snips-settings-changed", callback);
-    window.removeEventListener("storage", callback);
+    window.removeEventListener("snips-settings-changed", update);
+    window.removeEventListener("storage", update);
+  };
+});
+
+export function boolSetting(key: string, fallback = false) {
+  return {
+    get value() {
+      subscribe();
+      return readBoolSetting(key, fallback);
+    },
+    set value(next: boolean) {
+      writeBoolSetting(key, next);
+    },
   };
 }
 
-export function useBoolSetting(key: string, fallback = false) {
-  return useSyncExternalStore(subscribeSettings, () => readBoolSetting(key, fallback), () => fallback);
+export function stringSetting<T extends string = string>(key: string, fallback: T) {
+  return {
+    get value() {
+      subscribe();
+      return readStringSetting(key, fallback) as T;
+    },
+    set value(next: T) {
+      writeStringSetting(key, next);
+    },
+  };
 }
 
-export function useStringSetting(key: string, fallback = "") {
-  return useSyncExternalStore(subscribeSettings, () => readStringSetting(key, fallback), () => fallback);
+const ROOT_FLAGS: Array<[string, string]> = [
+  [SETTINGS_KEYS.reducedMotion, "a11y-reduce-motion"],
+  [SETTINGS_KEYS.largerText, "a11y-large-text"],
+  [SETTINGS_KEYS.strongerFocus, "a11y-strong-focus"],
+  [SETTINGS_KEYS.compactLayout, "pref-compact"],
+];
+
+export function syncRootClasses() {
+  subscribe();
+  for (const [key, className] of ROOT_FLAGS) applyRootClass(className, readBoolSetting(key));
+  const animation = readStringSetting(SETTINGS_KEYS.animationLevel, "full");
+  applyRootClass("pref-density-compact", readStringSetting(SETTINGS_KEYS.uiDensity) === "compact");
+  applyRootClass("pref-anim-reduced", animation === "reduced");
+  applyRootClass("pref-anim-minimal", animation === "minimal");
 }

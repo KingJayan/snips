@@ -12,6 +12,8 @@ const UNITS: { unit: Intl.RelativeTimeFormatUnit; ms: number }[] = [
 
 const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
+export const nowIso = () => new Date().toISOString();
+
 export function timeAgo(date: string | Date): string {
   const elapsed = new Date(date).getTime() - Date.now();
   for (const { unit, ms } of UNITS) {

@@ -1,5 +1,5 @@
-import type { ChatRequestBody, ChatMessage } from "@/lib/ai/chat-types";
-import { fetchWithTimeout, parseGeminiReply, readProviderResponse, type ProviderResult } from "@/lib/ai/providers/shared";
+import type { ChatRequestBody, ChatMessage } from "#lib/ai/chat-types.ts";
+import { fetchWithTimeout, parseGeminiReply, readProviderResponse, type ProviderResult } from "#lib/ai/providers/shared.ts";
 
 export async function callGeminiProvider(params: {
   body: ChatRequestBody;

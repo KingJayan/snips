@@ -1,5 +1,5 @@
-import type { ChatRequestBody, ChatMessage } from "@/lib/ai/chat-types";
-import { fetchWithTimeout, parseAnthropicReply, readProviderResponse, type ProviderResult } from "@/lib/ai/providers/shared";
+import type { ChatRequestBody, ChatMessage } from "#lib/ai/chat-types.ts";
+import { fetchWithTimeout, parseAnthropicReply, readProviderResponse, type ProviderResult } from "#lib/ai/providers/shared.ts";
 
 export async function callAnthropicProvider(params: {
   body: ChatRequestBody;

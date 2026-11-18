@@ -1,6 +1,6 @@
 .git
 .gitignore
-.next
+.svelte-kit
 node_modules
 .env.local
 .env*.local

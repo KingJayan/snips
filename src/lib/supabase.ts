@@ -1,75 +1,34 @@
-// supabase browser client
-
 import { createClient } from "@supabase/supabase-js";
+import { APP_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "$app/env/public";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabasePublishableKey =
-	process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
+export const supabase = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY ? createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) : null;
 
-export const supabase = isSupabaseConfigured
-	? createClient(supabaseUrl as string, supabasePublishableKey as string)
-	: null;
-
-function normalizeBaseUrl(url: string) {
-	return url.trim().replace(/\/$/, "");
-}
-
-function getMagicLinkRedirectUrl() {
-	const configuredBaseUrl =
-		process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
-
-	if (typeof window !== "undefined") {
-		const origin = window.location.origin;
-		const hostname = window.location.hostname;
-
-		if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-			return `${normalizeBaseUrl(origin)}/snippets`;
-		}
-
-		if (configuredBaseUrl) {
-			return `${normalizeBaseUrl(configuredBaseUrl)}/snippets`;
-		}
-
-		return `${normalizeBaseUrl(origin)}/snippets`;
-	}
-
-	if (configuredBaseUrl) {
-		return `${normalizeBaseUrl(configuredBaseUrl)}/snippets`;
-	}
-
-	return undefined;
+function magicLinkRedirectUrl() {
+  const { origin, hostname } = window.location;
+  const local = hostname === "localhost" || hostname === "127.0.0.1";
+  const base = (local && APP_URL) || origin;
+  return `${base.trim().replace(/\/$/, "")}/snippets`;
 }
 
 export async function getCurrentUser() {
-	if (!supabase) return null;
-
-	const { data } = await supabase.auth.getSession();
-	return data.session?.user ?? null;
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user ?? null;
 }
 
 export async function sendMagicLink(email: string) {
-	if (!supabase) {
-		return "supabase is not configured";
-	}
-
-	const { error } = await supabase.auth.signInWithOtp({
-		email,
-		options: {
-			emailRedirectTo: getMagicLinkRedirectUrl(),
-		},
-	});
-
-	return error?.message ?? null;
+  if (!supabase) return "supabase is not configured";
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: magicLinkRedirectUrl() },
+  });
+  return error?.message ?? null;
 }
 
 export async function signOutUser() {
-	if (!supabase) {
-		return "supabase is not configured";
-	}
-
-	const { error } = await supabase.auth.signOut();
-	return error?.message ?? null;
+  if (!supabase) return "supabase is not configured";
+  const { error } = await supabase.auth.signOut();
+  return error?.message ?? null;
 }

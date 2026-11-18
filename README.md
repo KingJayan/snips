@@ -18,7 +18,7 @@
 
 ## stack
 
-next.js • typescript • tailwind • shadcn/ui
+sveltekit • svelte 5 • typescript • tailwind
 supabase (postgres + auth)
 shiki • codemirror
 
@@ -44,9 +44,9 @@ bun dev
 2. create `.env.local`
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-NEXT_PUBLIC_APP_URL=https://your-production-domain.com
+SUPABASE_URL=your-project-url
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+APP_URL=https://your-production-domain.com
 ```
 
 optional ai:
@@ -58,7 +58,7 @@ GEMINI_API_KEY=
 OPENROUTER_API_KEY=
 OPENAI_COMPATIBLE_API_KEY=
 # optional: enable dev debug panel for a specific account (dev only)
-NEXT_PUBLIC_DEV_OWNER_EMAIL=
+DEV_OWNER_EMAIL=
 
 # optional server execution sandbox config (not used by default free mode)
 SNIPS_EXEC_PROVIDER=piston

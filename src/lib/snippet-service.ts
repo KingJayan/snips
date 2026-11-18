@@ -1,6 +1,6 @@
 import type { PostgrestError } from "@supabase/supabase-js";
-import { computeSnippetBenchmarks } from "@/lib/snippet-benchmarks";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { computeSnippetBenchmarks } from "#lib/snippet-benchmarks.ts";
+import { isSupabaseConfigured, supabase } from "#lib/supabase.ts";
 import type {
   ServiceResult,
   SnippetDraft,
@@ -8,7 +8,7 @@ import type {
   SnippetWithTags,
   Tag,
   Workspace,
-} from "@/lib/types";
+} from "#lib/types.ts";
 
 type TagLinks = {
   snippet_tags?: Array<{
@@ -59,7 +59,7 @@ function withError<T>(error: unknown): ServiceResult<T> {
 function requireClient() {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
-      "supabase is not configured. add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local"
+      "supabase is not configured. add PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env"
     );
   }
 

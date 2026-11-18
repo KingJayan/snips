@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatMode, ChatSnippet } from "@/lib/ai/chat-types";
+import type { ChatMessage, ChatMode, ChatSnippet } from "#lib/ai/chat-types.ts";
 
 const MAX_SNIPPET_CHARS = 12_000;
 const MAX_MESSAGE_WINDOW = 24;

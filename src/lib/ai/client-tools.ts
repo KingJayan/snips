@@ -1,38 +1,13 @@
-"use client";
+import type { ChatMode } from "#lib/ai/chat-types.ts";
+import { postChat, readChatConfig } from "#lib/ai/chat-config.ts";
+import type { SnippetWithTags } from "#lib/types.ts";
 
-import type { ChatMode } from "@/lib/ai/chat-types";
-import { supabase } from "@/lib/supabase";
-import type { SnippetWithTags } from "@/lib/types";
-import { SETTINGS_KEYS } from "@/lib/settings";
-
-type StoredAiConfig = {
-  provider: string;
-  model: string;
-  apiKey: string;
-  baseUrl: string;
-};
-
-type SimilarSnippetResult = {
+export type SimilarSnippetResult = {
   id: string;
   title: string;
   score: number;
   reason: string;
 };
-
-function readAiConfig(): StoredAiConfig {
-  if (typeof window === "undefined") {
-    return { provider: "openai", model: "gpt-5-mini", apiKey: "", baseUrl: "" };
-  }
-
-  const sessionApiKey = window.sessionStorage.getItem("snips.ai.apiKey.session") || "";
-
-  return {
-    provider: localStorage.getItem("snips.ai.provider") || "openai",
-    model: localStorage.getItem("snips.ai.model") || "gpt-5-mini",
-    apiKey: sessionApiKey,
-    baseUrl: localStorage.getItem("snips.ai.baseUrl") || "",
-  };
-}
 
 function extractTextFromAiResponse(text: string) {
   return text.replace(/^```[\w-]*\n?|```$/g, "").trim();
@@ -43,45 +18,11 @@ async function callAi(params: {
   prompt: string;
   snippet: Pick<SnippetWithTags, "title" | "language" | "description" | "code">;
 }) {
-  const session = await supabase?.auth.getSession();
-  const accessToken = session?.data.session?.access_token;
-  if (!accessToken) {
-    throw new Error("your session expired. refresh and sign in again.");
-  }
-
-  const config = readAiConfig();
-
+  const config = readChatConfig();
   if (config.provider === "puterjs") {
     throw new Error("switch provider from puterjs to a server-backed provider for this action");
   }
-
-  const response = await fetch("/api/ai/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      provider: config.provider,
-      model: config.model,
-      apiKey: config.apiKey,
-      baseUrl: config.baseUrl,
-      mode: params.mode,
-      messages: [{ role: "user", content: params.prompt }],
-      snippet: params.snippet,
-    }),
-  });
-
-  const payload = (await response.json().catch(() => ({}))) as {
-    reply?: string;
-    error?: string;
-  };
-
-  if (!response.ok || !payload.reply) {
-    throw new Error(payload.error ?? "ai request failed");
-  }
-
-  return payload.reply;
+  return postChat({ ...config, mode: params.mode }, [{ role: "user", content: params.prompt }], params.snippet);
 }
 
 export async function generateTagsForSnippet(snippet: Pick<SnippetWithTags, "title" | "language" | "description" | "code">) {
@@ -175,10 +116,3 @@ export async function rankSimilarSnippets(params: {
       reason: typeof item.reason === "string" && item.reason.trim() ? item.reason : "similar coding pattern",
     }));
 }
-
-export function isAiSimilarityEnabled() {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(SETTINGS_KEYS.aiSimilaritySearch) === "1";
-}
-
-export type { SimilarSnippetResult };

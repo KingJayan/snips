@@ -1,10 +1,10 @@
-import { callAnthropicProvider } from "@/lib/ai/providers/anthropic";
-import { callGeminiProvider } from "@/lib/ai/providers/gemini";
-import { callOpenAICompatibleProvider } from "@/lib/ai/providers/openai-compatible";
-import { callOpenAIProvider } from "@/lib/ai/providers/openai";
-import { callOpenRouterProvider } from "@/lib/ai/providers/openrouter";
-import type { ProviderResult } from "@/lib/ai/providers/shared";
-import type { ChatMessage, ChatProvider, ChatRequestBody } from "@/lib/ai/chat-types";
+import { callAnthropicProvider } from "#lib/ai/providers/anthropic.ts";
+import { callGeminiProvider } from "#lib/ai/providers/gemini.ts";
+import { callOpenAICompatibleProvider } from "#lib/ai/providers/openai-compatible.ts";
+import { callOpenAIProvider } from "#lib/ai/providers/openai.ts";
+import { callOpenRouterProvider } from "#lib/ai/providers/openrouter.ts";
+import type { ProviderResult } from "#lib/ai/providers/shared.ts";
+import type { ChatMessage, ChatProvider, ChatRequestBody } from "#lib/ai/chat-types.ts";
 
 export type ProviderCapabilities = {
   streaming: boolean;
