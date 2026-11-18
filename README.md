@@ -22,7 +22,7 @@ next.js • typescript • tailwind • shadcn/ui
 supabase (postgres + auth)
 shiki • codemirror
 
-providers: openai • anthropic • gemini • ollama • openrouter
+providers: openai • anthropic • gemini • openrouter • openai-compatible
 
 ## preview
 
@@ -57,11 +57,6 @@ ANTHROPIC_API_KEY=
 GEMINI_API_KEY=
 OPENROUTER_API_KEY=
 OPENAI_COMPATIBLE_API_KEY=
-OLLAMA_BASE_URL=http://localhost:11434
-
-# optional: allow non-local ollama host (off by default for safety)
-SNIPS_AI_ALLOW_REMOTE_OLLAMA=0
-
 # optional: enable dev debug panel for a specific account (dev only)
 NEXT_PUBLIC_DEV_OWNER_EMAIL=
 

@@ -54,9 +54,10 @@ bun run build
 run:
 
 ```bash
-npm run lint
-npx tsc --noEmit
-npm run build
+bun run lint
+bun run typecheck
+bun run test
+bun run build
 ```
 
 ## pr checklist
