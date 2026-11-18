@@ -1,7 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { ArrowUpRight, Clock, CodeXml, Globe, Pin, Play, Trash } from "@lucide/svelte";
-  import { LANGUAGES } from "#lib/constants.ts";
+  import { ArrowUpRight, Globe, Pin, Play, Trash } from "@lucide/svelte";
   import { timeAgo } from "#lib/time.ts";
   import type { SnippetSummaryWithTags } from "#lib/types.ts";
   import Badge from "./ui/Badge.svelte";
@@ -18,8 +17,6 @@
   };
 
   let { snippet, basePath = "/snippets", selected = false, onTagClick, onTogglePin, onDelete, onDragStart, onDragEnd }: Props = $props();
-
-  const label = $derived(LANGUAGES[snippet.language]?.label ?? snippet.language);
 
   function stop(event: Event) {
     event.preventDefault();
@@ -93,17 +90,10 @@
         </button>
       {/if}
 
-      {#if snippet.public}
-        <Badge variant="outline" class="shrink-0 px-1 py-0.5 text-[8px] sm:px-1.5 sm:text-[9px]">
-          <Globe class="mr-0.5 size-2" />
-          public
-        </Badge>
+      {#if snippet.public && basePath !== "/public"}
+        <span class="p-1 text-muted-foreground" title="public"><Globe class="size-3" /><span class="sr-only">public</span></span>
       {/if}
-
-      <Badge variant="secondary" class="font-mono text-[8px] tracking-widest uppercase sm:text-[10px]">
-        <CodeXml class="size-2.5" />
-        {label}
-      </Badge>
+      <span class="font-mono text-[10px] text-muted-foreground sm:text-xs">{snippet.language}</span>
     </div>
   </div>
 
@@ -132,10 +122,7 @@
     </div>
 
     <div class="flex shrink-0 items-center gap-1">
-      <span class="flex items-center gap-0.5 text-[8px] text-muted-foreground sm:text-[10px]">
-        <Clock class="size-2.5 sm:size-3" />
-        {timeAgo(snippet.updated_at)}
-      </span>
+      <span class="text-[10px] text-muted-foreground">{timeAgo(snippet.updated_at)}</span>
       <ArrowUpRight class="size-2.5 text-muted-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 sm:size-3" />
     </div>
   </div>
