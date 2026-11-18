@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { ArrowUpRight, Globe } from "@lucide/svelte";
   import { page } from "$app/state";
   import CodeBlock from "#lib/components/CodeBlock.svelte";
-  import CompactNav from "#lib/components/CompactNav.svelte";
+  import AppHeader from "#lib/components/AppHeader.svelte";
   import Loading from "#lib/components/Loading.svelte";
   import NotFound from "#lib/components/NotFound.svelte";
   import SnippetActions from "#lib/components/SnippetActions.svelte";
@@ -37,16 +36,13 @@
   <NotFound message={error ?? "snippet not found or not public"} />
 {:else}
   {@const current = snippet}
-  <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:py-8 motion-safe-enter">
-    <CompactNav />
+  <AppHeader />
+  <main class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:py-8 motion-safe-enter">
     <SnippetActions snippet={current} onCopied={() => (current.copy_count += 1)} />
     <header class="space-y-3 rounded-2xl border border-border/70 bg-card/70 p-4 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
       <SnippetMeta snippet={current} />
     </header>
     <CodeBlock code={current.code} language={current.language} />
-    <footer class="flex items-center justify-center gap-2 rounded-xl border border-border/70 bg-muted/20 p-3 text-xs text-muted-foreground vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
-      <span class="inline-flex size-6 items-center justify-center rounded-md vfx-icon-chip" title="public snippet"><Globe class="size-3.5" /></span>
-      <a href="/snippets" class="inline-flex size-6 items-center justify-center rounded-md transition-colors hover:text-foreground vfx-icon-chip" title="create your own" aria-label="create your own"><ArrowUpRight class="size-3.5" /></a>
-    </footer>
+    <p class="text-center text-xs text-muted-foreground"><a href="/snippets" class="underline underline-offset-4 hover:text-foreground">save your own snippets with snips</a></p>
   </main>
 {/if}

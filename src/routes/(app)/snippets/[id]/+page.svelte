@@ -6,7 +6,7 @@
   import AiChat from "#lib/components/AiChat.svelte";
   import CodeBlock from "#lib/components/CodeBlock.svelte";
   import CodeEditor from "#lib/components/CodeEditor.svelte";
-  import CompactNav from "#lib/components/CompactNav.svelte";
+  import AppHeader from "#lib/components/AppHeader.svelte";
   import ErrorNote from "#lib/components/ErrorNote.svelte";
   import Loading from "#lib/components/Loading.svelte";
   import NotFound from "#lib/components/NotFound.svelte";
@@ -159,10 +159,11 @@
   <NotFound message={error ?? "snippet not found"} />
 {:else}
   {@const current = snippet}
-  <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:gap-6 sm:py-8">
-    <CompactNav playgroundId={current.id} />
+  <AppHeader />
+  <main class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:gap-6 sm:py-8">
 
     <SnippetActions bind:this={actions} snippet={current} onCopied={() => (current.copy_count += 1)}>
+      <Button variant="outline" size="icon-sm" href="/playground/{current.id}" aria-label="playground" tip="playground"><Play class="size-4" /></Button>
       <Button variant="outline" size="icon-sm" onclick={() => share(current)} aria-label="share" tip="share"><Share2 class="size-4" /></Button>
       <Button variant={current.public ? "default" : "outline"} size="icon-sm" onclick={() => togglePublic(current)} aria-label={current.public ? "public" : "private"} tip={current.public ? "public" : "private"}>
         {#if current.public}<Globe class="size-4" />{:else}<Lock class="size-4" />{/if}
@@ -203,14 +204,6 @@
             <Button variant="outline" size="sm" onclick={() => (aiOverride = false)}><PanelRightOpen class="size-4" /> open ai chat</Button>
           </div>
         {/if}
-
-        <section class="rounded-2xl border border-border/70 bg-card/70 p-3 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
-          <div class="flex items-center justify-between gap-2">
-            <h2 class="text-sm font-semibold tracking-tight">playground</h2>
-            <Button variant="outline" size="sm" href="/playground/{current.id}"><Play class="size-4" /> open playground</Button>
-          </div>
-          <p class="mt-2 text-xs text-muted-foreground">test and run this code in an isolated environment</p>
-        </section>
 
         {#if editing}
           <section class="rounded-2xl border border-accent/50 bg-card/70 p-3 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">

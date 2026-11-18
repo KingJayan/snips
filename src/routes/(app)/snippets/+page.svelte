@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { CodeXml, Keyboard, LoaderCircle, Plus, RefreshCw, Search } from "@lucide/svelte";
+  import { LoaderCircle, Plus, RefreshCw } from "@lucide/svelte";
   import { onMount } from "svelte";
-  import AppLogo from "#lib/components/AppLogo.svelte";
-  import AuthPanel from "#lib/components/AuthPanel.svelte";
+  import AppHeader from "#lib/components/AppHeader.svelte";
   import NameDialog from "#lib/components/NameDialog.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
   import ShortcutsPanel from "#lib/components/ShortcutsPanel.svelte";
+  import SignIn from "#lib/components/SignIn.svelte";
   import SnippetDialog from "#lib/components/SnippetDialog.svelte";
   import SnippetList from "#lib/components/SnippetList.svelte";
   import TagFilter from "#lib/components/TagFilter.svelte";
@@ -89,10 +89,15 @@
     if (!error) nameDialog = null;
   }
 
-  async function authAction(action: () => Promise<string | null>, success: string) {
+  async function signIn() {
     auth = { busy: true, message: null, error: null };
-    const error = await action();
-    auth = { busy: false, message: error ? null : success, error };
+    const error = await sendMagicLink(library.email.trim());
+    auth = { busy: false, message: error ? null : `check ${library.email.trim()} for your sign-in link.`, error };
+  }
+
+  async function signOut() {
+    const error = await signOutUser();
+    toast(error ?? "signed out", error ? "error" : "success");
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -123,129 +128,103 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 py-8 sm:px-6 motion-safe-enter">
-  <WorkspaceNav
-    workspaces={library.workspaces}
-    activeId={library.activeId}
-    canSelect={library.authenticated}
-    dragging={dragging !== null}
-    {actions}
-    pinnedTitles={library.pinnedTitles}
-    onSelect={(id) => library.select(id)}
-    onDrop={(snippetId, workspaceId) => {
-      dragging = null;
-      void library.move(snippetId, workspaceId);
-    }}
-  />
+<AppHeader>
+  {#if library.authenticated}
+    {#if library.email}<span class="hidden sm:block"><UserChip email={library.email} /></span>{/if}
+    <Button variant="ghost" size="sm" onclick={signOut}>sign out</Button>
+  {/if}
+</AppHeader>
 
-  <header class="flex flex-wrap items-center justify-between gap-3">
-    <div class="space-y-1">
-      <AppLogo />
-      {#if hints.value}
-        <div class="inline-flex items-center gap-1 rounded-md border border-border/40 bg-background/60 px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground select-none animate-subtle-pop-in">
-          <Keyboard class="size-2.5 shrink-0" /> n · cmd+↵
+{#if !library.authenticated}
+  {#if !library.loading}
+    <main class="px-4"><SignIn bind:email={library.email} busy={auth.busy} message={auth.message} error={auth.error ?? library.error} onSubmit={signIn} /></main>
+  {/if}
+{:else}
+  <div class="mx-auto flex w-full max-w-6xl gap-6 px-4 pt-6 pb-24 sm:px-6 lg:pb-8">
+    <WorkspaceNav
+      workspaces={library.workspaces}
+      activeId={library.activeId}
+      dragging={dragging !== null}
+      {actions}
+      pinnedTitles={library.pinnedTitles}
+      onSelect={(id) => library.select(id)}
+      onDrop={(snippetId, workspaceId) => {
+        dragging = null;
+        void library.move(snippetId, workspaceId);
+      }}
+    />
+
+    <main class="flex min-w-0 flex-1 flex-col gap-4 motion-safe-enter">
+      <header class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 class="text-lg font-semibold tracking-tight">{library.active?.name ?? "snippets"}</h1>
+          <p class="text-xs text-muted-foreground">{filtered.length} snippet{filtered.length === 1 ? "" : "s"}{activeTag ? ` tagged ${activeTag}` : ""}</p>
         </div>
-      {/if}
-    </div>
-    <div class="flex items-center gap-2">
-      {#if library.authenticated && library.email}<UserChip email={library.email} />{/if}
-      <Button variant="outline" onclick={refresh} disabled={library.loading}>
-        <RefreshCw class="size-4 {library.loading || library.refreshing ? 'animate-spin' : ''}" /> refresh
-      </Button>
-      <Button onclick={() => (snippetDialog = true)} disabled={!canCreate}><Plus class="size-4" /> new snippet</Button>
-    </div>
-  </header>
+        <div class="flex items-center gap-2">
+          <Button variant="outline" size="icon" onclick={refresh} disabled={library.loading} aria-label="refresh" tip="refresh">
+            <RefreshCw class="size-4 {library.loading || library.refreshing ? 'animate-spin' : ''}" />
+          </Button>
+          <Button onclick={() => (snippetDialog = true)} disabled={!canCreate}><Plus class="size-4" /> new snippet</Button>
+        </div>
+      </header>
 
-  {#if !library.authenticated || auth.error || auth.message}
-    <AuthPanel
-      bind:email={library.email}
-      authenticated={library.authenticated}
-      busy={auth.busy}
-      message={auth.message}
-      error={auth.error}
-      onRefresh={refresh}
-      onSendMagicLink={() => authAction(() => (library.email.trim() ? sendMagicLink(library.email.trim()) : Promise.resolve("email is required")), "magic link sent. check your inbox.")}
-      onSignOut={() => authAction(signOutUser, "signed out")}
-    />
-  {/if}
-
-  <section class="space-y-3 rounded-2xl border border-border/70 bg-card/70 p-3 vfx-surface vfx-sheen vfx-edge-light vfx-glass vfx-float-shadow">
-    <SearchBar bind:value={search} bind:ref={searchInput} />
-    {#if hints.value}
-      <p class="inline-flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground select-none animate-subtle-pop-in">
-        <Search class="size-3 shrink-0" />
-        power search: <span class="font-mono">tag:react</span> · <span class="font-mono">lang:ts</span> · <span class="font-mono">is:pinned</span>
-      </p>
-    {/if}
-    <TagFilter {tags} bind:active={activeTag} />
-  </section>
-
-  {#if library.error}
-    <section class="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{library.error}</section>
-  {/if}
-
-  {#if library.loading}
-    <section class="grid gap-3" aria-live="polite">
-      <LoaderCircle class="size-3.5 animate-spin text-muted-foreground" />
-      <span class="sr-only">loading snippets</span>
-      {#each { length: 6 }, index (index)}
-        <div class="h-40 animate-pulse rounded-xl border border-border/50 bg-muted/40"></div>
-      {/each}
-    </section>
-  {:else if !filtered.length}
-    <section class="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-12 text-center">
-      <CodeXml class="mx-auto size-12 text-muted-foreground/50" />
-      <h2 class="mt-4 text-sm font-medium">{library.snippets.length ? "no snippets found" : "no snippets yet"}</h2>
-      <p class="mt-1 text-sm text-muted-foreground">
-        {#if library.snippets.length}
-          adjust search/filter or add a new snippet
-        {:else}
-          press <kbd class="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-xs">n</kbd> to create your first one
-        {/if}
-      </p>
-    </section>
-  {:else}
-    {#if library.authenticated}
-      <section class="flex items-center justify-between px-1 text-xs text-muted-foreground">
-        <span>{filtered.length} snippets</span>
-        {#if activeTag}<span>filter: {activeTag}</span>{/if}
+      <section class="space-y-3">
+        <SearchBar bind:value={search} bind:ref={searchInput} placeholder={hints.value ? "search, or try tag:react  lang:ts  is:pinned" : undefined} />
+        <TagFilter {tags} bind:active={activeTag} />
       </section>
-    {/if}
-    <SnippetList
-      snippets={filtered}
-      {selected}
-      onTagClick={(tag) => (activeTag = tag)}
-      onTogglePin={(id, pinned) => library.togglePin(id, pinned)}
-      onDelete={(id) => library.remove(id)}
-      onDragStart={(id) => (dragging = id)}
-      onDragEnd={() => (dragging = null)}
-    />
-  {/if}
 
-  <SnippetDialog bind:open={snippetDialog} onSave={(draft) => library.create(draft)} />
+      {#if library.error}
+        <section class="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{library.error}</section>
+      {/if}
 
-  <NameDialog
-    bind:open={() => nameDialog !== null, (open) => !open && (nameDialog = null)}
-    title={nameDialog === "rename" ? "rename workspace" : "new workspace"}
-    description={nameDialog === "rename" ? "update the workspace name" : "create a focused workspace for your snippets"}
-    initial={nameDialog === "rename" ? (library.active?.name ?? "") : ""}
-    submitLabel={nameDialog === "rename" ? "save" : "create"}
-    busy={library.busy}
-    onSubmit={submitName}
-  />
+      {#if library.loading}
+        <section class="grid gap-3" aria-live="polite">
+          <LoaderCircle class="size-3.5 animate-spin text-muted-foreground" />
+          <span class="sr-only">loading snippets</span>
+          {#each { length: 6 }, index (index)}
+            <div class="h-28 animate-pulse rounded-xl border border-border/50 bg-muted/40"></div>
+          {/each}
+        </section>
+      {:else if !filtered.length}
+        <section class="rounded-2xl border border-dashed border-border/70 p-12 text-center">
+          <h2 class="text-sm font-medium">{library.snippets.length ? "no matching snippets" : "no snippets yet"}</h2>
+          <p class="mt-1 text-sm text-muted-foreground">{library.snippets.length ? "try a different search or tag." : "snippets you save will show up here."}</p>
+        </section>
+      {:else}
+        <SnippetList
+          snippets={filtered}
+          {selected}
+          onTagClick={(tag) => (activeTag = tag)}
+          onTogglePin={(id, pinned) => library.togglePin(id, pinned)}
+          onDelete={(id) => library.remove(id)}
+          onDragStart={(id) => (dragging = id)}
+          onDragEnd={() => (dragging = null)}
+        />
+      {/if}
+    </main>
+  </div>
+{/if}
 
-  {#snippet deleteDescription()}delete <span class="font-medium">{library.active?.name ?? "workspace"}</span> and all snippets in it. this cannot be undone.{/snippet}
+<SnippetDialog bind:open={snippetDialog} onSave={(draft) => library.create(draft)} />
 
-  <Dialog bind:open={deleteDialog} title="delete workspace" description={deleteDescription} class="max-w-md rounded-2xl border-border/70">
-    <div class="flex flex-col-reverse gap-2 px-6 pb-6 sm:flex-row sm:justify-end">
-      <Button variant="outline" onclick={() => (deleteDialog = false)} disabled={library.busy}>cancel</Button>
-      <Button variant="destructive" disabled={library.busy} onclick={async () => !(await library.deleteWorkspace()) && (deleteDialog = false)}>delete</Button>
-    </div>
-  </Dialog>
+<NameDialog
+  bind:open={() => nameDialog !== null, (open) => !open && (nameDialog = null)}
+  title={nameDialog === "rename" ? "rename workspace" : "new workspace"}
+  description={nameDialog === "rename" ? "update the workspace name" : "create a focused workspace for your snippets"}
+  initial={nameDialog === "rename" ? (library.active?.name ?? "") : ""}
+  submitLabel={nameDialog === "rename" ? "save" : "create"}
+  busy={library.busy}
+  onSubmit={submitName}
+/>
 
-  <ShortcutsPanel bind:open={shortcuts} shortcuts={SHORTCUTS} />
+{#snippet deleteDescription()}delete <span class="font-medium">{library.active?.name ?? "workspace"}</span> and all snippets in it. this cannot be undone.{/snippet}
 
-  <Button size="icon" onclick={() => (snippetDialog = true)} disabled={!canCreate} class="fixed right-6 bottom-6 z-40 size-14 rounded-full shadow-lg md:hidden" aria-label="new snippet">
-    <Plus class="size-6" />
-  </Button>
-</main>
+<Dialog bind:open={deleteDialog} title="delete workspace" description={deleteDescription} class="max-w-md rounded-2xl border-border/70">
+  <div class="flex flex-col-reverse gap-2 px-6 pb-6 sm:flex-row sm:justify-end">
+    <Button variant="outline" onclick={() => (deleteDialog = false)} disabled={library.busy}>cancel</Button>
+    <Button variant="destructive" disabled={library.busy} onclick={async () => !(await library.deleteWorkspace()) && (deleteDialog = false)}>delete</Button>
+  </div>
+</Dialog>
+
+<ShortcutsPanel bind:open={shortcuts} shortcuts={SHORTCUTS} />
+

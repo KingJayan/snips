@@ -408,11 +408,10 @@ html.low-hw-reduce-animations * {
   transition-duration: 100ms !important;
 }
 
-/* ── Landing page 3D card (inside drei <Html> portal) ── */
 .landing-3d-card {
   width: 240px;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: #0d1117;
+  border: 1px solid rgb(255 255 255 / 0.1);
   border-radius: 10px;
   overflow: hidden;
   box-shadow:
@@ -428,14 +427,14 @@ html.low-hw-reduce-animations * {
   align-items: center;
   justify-content: space-between;
   padding: 9px 12px 8px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
   gap: 8px;
 }
 
 .l3c-title {
   font-size: 10.5px;
   font-weight: 600;
-  color: var(--foreground);
+  color: #e4e4e7;
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   white-space: nowrap;
   overflow: hidden;
@@ -493,4 +492,11 @@ html.low-hw-reduce-animations * {
 
 dialog.app-dialog::backdrop {
   background: rgb(0 0 0 / 0.5);
+}
+
+.app-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 0.5rem center;
+  background-size: 14px;
+  background-repeat: no-repeat;
 }

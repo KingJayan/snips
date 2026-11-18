@@ -3,7 +3,7 @@
   import Button from "./ui/Button.svelte";
   import Input from "./ui/Input.svelte";
 
-  let { value = $bindable(), ref = $bindable(null) }: { value: string; ref?: HTMLInputElement | null } = $props();
+  let { value = $bindable(), ref = $bindable(null), placeholder = "search title, description, tags" }: { value: string; ref?: HTMLInputElement | null; placeholder?: string } = $props();
 </script>
 
 <div class="relative w-full motion-safe-enter">
@@ -11,7 +11,7 @@
   <Input
     bind:value
     bind:ref
-    placeholder="search title, description, tags..."
+    {placeholder}
     aria-label="search snippets"
     class="h-10 rounded-xl border-border/70 bg-background pr-10 pl-9 transition-all duration-200 ease-out focus-visible:-translate-y-0.5 focus-visible:shadow-sm"
   />

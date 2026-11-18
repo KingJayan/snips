@@ -4,7 +4,6 @@
   import { dev } from "$app/env";
   import DevDebugPanel from "#lib/components/DevDebugPanel.svelte";
   import SettingsDialog from "#lib/components/settings/SettingsDialog.svelte";
-  import ThemeToggle from "#lib/components/ThemeToggle.svelte";
   import Toaster from "#lib/components/Toaster.svelte";
   import { cursorEffects } from "#lib/effects/cursor.ts";
   import { syncRootClasses } from "#lib/settings.ts";
@@ -24,4 +23,3 @@
 <Toaster />
 {#if dev}<DevDebugPanel />{/if}
 <SettingsDialog />
-<ThemeToggle />

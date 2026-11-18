@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { Accessibility, Palette, Search, Settings2, SlidersHorizontal, Sparkles, Zap } from "@lucide/svelte";
+  import { Accessibility, Palette, Search, SlidersHorizontal, Sparkles, Zap } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { APP_VERSION } from "#lib/app-version.ts";
-  import { boolSetting, SETTINGS_KEYS } from "#lib/settings.ts";
+  import { settingsDialog } from "#lib/settings-dialog.svelte.ts";
   import { cn } from "#lib/utils.ts";
-  import Button from "../ui/Button.svelte";
   import Dialog from "../ui/Dialog.svelte";
   import PerfSettings from "./PerfSettings.svelte";
   import SettingRow from "./SettingRow.svelte";
@@ -18,16 +17,13 @@
     { id: "performance", label: "perf", icon: Zap },
     { id: "accessibility", label: "a11y", icon: Accessibility },
   ];
-  const COUNTED = [SETTINGS_KEYS.reducedMotion, SETTINGS_KEYS.largerText, SETTINGS_KEYS.strongerFocus, SETTINGS_KEYS.aiSimilaritySearch].map((key) => boolSetting(key));
 
-  let open = $state(false);
   let group = $state<SettingsGroup>("personalization");
   let query = $state("");
   let recent = $state<string[]>([]);
 
   const needle = $derived(query.trim().toLowerCase());
   const items = $derived(group === "performance" ? [] : GROUPS[group].filter((item) => !needle || item.terms.some((term) => term.includes(needle))));
-  const enabled = $derived(COUNTED.filter((setting) => setting.value).length);
 
   function remember(label: string) {
     recent = [label, ...recent.filter((entry) => entry !== label)].slice(0, 6);
@@ -59,11 +55,7 @@
   });
 </script>
 
-<Button variant="outline" size="icon" class="fixed right-4 bottom-16 z-[60] rounded-full border-border/70 bg-card/90 shadow-lg backdrop-blur" onclick={() => (open = true)} aria-label="open settings" title="settings">
-  <Settings2 class="size-4" />
-</Button>
-
-<Dialog bind:open title="settings" description="configure ai features, personalization, and accessibility preferences." class="max-h-[85vh] max-w-2xl rounded-2xl border-border/70 sm:max-w-2xl" headerClass="border-b border-border/70 px-5 py-4">
+<Dialog bind:open={settingsDialog.open} title="settings" description="configure ai features, personalization, and accessibility preferences." class="max-h-[85vh] max-w-2xl rounded-2xl border-border/70 sm:max-w-2xl" headerClass="border-b border-border/70 px-5 py-4">
   <div class="border-b border-border/70 px-4 py-2.5">
     <div class="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-1.5">
       <Search class="size-3.5 shrink-0 text-muted-foreground" />
@@ -105,6 +97,6 @@
   </div>
 
   <div class="border-t border-border/70 px-4 py-2">
-    <p class="text-xs text-muted-foreground">{enabled} setting{enabled === 1 ? "" : "s"} enabled · {APP_VERSION}</p>
+    <p class="text-xs text-muted-foreground">{APP_VERSION}</p>
   </div>
 </Dialog>
