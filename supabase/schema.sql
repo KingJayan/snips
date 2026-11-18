@@ -30,10 +30,6 @@ create table if not exists public.snippets (
   code        text not null,
   pinned      boolean not null default false,
   public      boolean not null default false,
-  benchmark_chars integer,
-  benchmark_bytes integer,
-  benchmark_bits integer,
-  benchmark_lines integer,
   view_count integer not null default 0,
   copy_count integer not null default 0,
   created_at  timestamptz not null default now(),
@@ -107,6 +103,10 @@ create index if not exists snippet_tags_tag_idx on public.snippet_tags(tag_id);
 -- legacy cleanup
 -- ────────────────────────────────────────────
 drop index if exists public.snippets_search_idx;
+alter table public.snippets drop column if exists benchmark_chars;
+alter table public.snippets drop column if exists benchmark_bytes;
+alter table public.snippets drop column if exists benchmark_bits;
+alter table public.snippets drop column if exists benchmark_lines;
 drop function if exists public.can_manage_workspace(uuid) cascade;
 drop function if exists public.is_configured_owner_or_admin() cascade;
 drop function if exists public.current_auth_email() cascade;
@@ -189,6 +189,8 @@ create policy "snippet_tags delete" on public.snippet_tags for delete
 -- ────────────────────────────────────────────
 -- atomic snippet save
 -- ────────────────────────────────────────────
+drop function if exists public.save_snippet(uuid, uuid, text, text, text, text, integer, integer, integer, integer, text[]);
+
 create or replace function public.save_snippet(
   p_id uuid,
   p_workspace_id uuid,
@@ -196,10 +198,6 @@ create or replace function public.save_snippet(
   p_language text,
   p_description text,
   p_code text,
-  p_benchmark_chars integer,
-  p_benchmark_bytes integer,
-  p_benchmark_bits integer,
-  p_benchmark_lines integer,
   p_tags text[]
 )
 returns uuid
@@ -217,12 +215,10 @@ begin
 
   if p_id is null then
     insert into public.snippets (
-      user_id, workspace_id, title, language, description, code,
-      benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines
+      user_id, workspace_id, title, language, description, code
     )
     values (
-      auth.uid(), p_workspace_id, p_title, p_language, p_description, p_code,
-      p_benchmark_chars, p_benchmark_bytes, p_benchmark_bits, p_benchmark_lines
+      auth.uid(), p_workspace_id, p_title, p_language, p_description, p_code
     )
     returning id into v_id;
   else
@@ -230,11 +226,7 @@ begin
     set title = p_title,
         language = p_language,
         description = p_description,
-        code = p_code,
-        benchmark_chars = p_benchmark_chars,
-        benchmark_bytes = p_benchmark_bytes,
-        benchmark_bits = p_benchmark_bits,
-        benchmark_lines = p_benchmark_lines
+        code = p_code
     where id = p_id and user_id = auth.uid()
     returning id into v_id;
 
@@ -256,8 +248,8 @@ begin
 end;
 $$;
 
-revoke all on function public.save_snippet(uuid, uuid, text, text, text, text, integer, integer, integer, integer, text[]) from public, anon;
-grant execute on function public.save_snippet(uuid, uuid, text, text, text, text, integer, integer, integer, integer, text[]) to authenticated;
+revoke all on function public.save_snippet(uuid, uuid, text, text, text, text, text[]) from public, anon;
+grant execute on function public.save_snippet(uuid, uuid, text, text, text, text, text[]) to authenticated;
 
 -- ────────────────────────────────────────────
 -- view / copy counters (one per user per snippet)
@@ -372,10 +364,6 @@ grant execute on function public.consume_ai_rate_limit(text, integer, integer) t
 -- migration: add missing columns to existing snippets table
 -- ────────────────────────────────────────────
 
-alter table public.snippets add column if not exists benchmark_chars integer;
-alter table public.snippets add column if not exists benchmark_bytes integer;
-alter table public.snippets add column if not exists benchmark_bits integer;
-alter table public.snippets add column if not exists benchmark_lines integer;
 alter table public.snippets add column if not exists workspace_id uuid references public.workspaces(id) on delete cascade;
 alter table public.snippets add column if not exists pinned boolean not null default false;
 alter table public.snippets add column if not exists public boolean not null default false;

@@ -80,11 +80,11 @@ DEV_OWNER_EMAIL=
 - python runs in-browser (pyodide)
 - cpp requires external runner
 - execution returns stdout, stderr, runtime, memory
-- benchmarks: chars, bytes, bits, lines
+- stats: lines, chars, views, copies
 - metadata: views, copies, timestamps
 - tags deduped, lowercase, 30 char max
 - theme + settings persist locally
-- fast: virtualized list, cached highlighting, efficient filtering
+- fast: cached highlighting, efficient filtering
 
 ## scripts
 

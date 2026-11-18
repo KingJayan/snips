@@ -11,8 +11,8 @@
   const stats = $derived(
     [
       snippet.language,
-      `${snippet.benchmark_lines ?? 0} lines`,
-      `${snippet.benchmark_chars ?? 0} chars`,
+      `${snippet.code ? snippet.code.split("\n").length : 0} lines`,
+      `${snippet.code.length} chars`,
       `${snippet.view_count} views`,
       `${snippet.copy_count} copies`,
       status ?? `updated ${timeAgo(snippet.updated_at)}`,

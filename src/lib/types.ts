@@ -10,10 +10,6 @@ export type Snippet = {
   code: string;
   pinned: boolean;
   public: boolean;
-  benchmark_chars: number | null;
-  benchmark_bytes: number | null;
-  benchmark_bits: number | null;
-  benchmark_lines: number | null;
   view_count: number;
   copy_count: number;
   created_at: string;

@@ -1,5 +1,4 @@
 import type { PostgrestError } from "@supabase/supabase-js";
-import { computeSnippetBenchmarks } from "#lib/snippet-benchmarks.ts";
 import { isSupabaseConfigured, supabase } from "#lib/supabase.ts";
 import type {
   ServiceResult,
@@ -18,9 +17,9 @@ type TagLinks = {
 
 const MAX_LIST_ITEMS = 200;
 const SUMMARY_COLUMNS =
-  "id, user_id, workspace_id, title, language, description, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))";
+  "id, user_id, workspace_id, title, language, description, pinned, public, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))";
 const SNIPPET_COLUMNS =
-  "id, user_id, workspace_id, title, language, description, code, pinned, public, benchmark_chars, benchmark_bytes, benchmark_bits, benchmark_lines, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))";
+  "id, user_id, workspace_id, title, language, description, code, pinned, public, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))";
 const WORKSPACE_COLUMNS = "id, owner_id, name, is_public, created_at, updated_at";
 const NOT_FOUND = "snippet not found";
 
@@ -324,7 +323,6 @@ async function saveSnippet(id: string | null, draft: SnippetDraft) {
     throw new Error("workspace is required");
   }
 
-  const benchmarks = computeSnippetBenchmarks(draft.code);
   const { data, error } = await client.rpc("save_snippet", {
     p_id: id,
     p_workspace_id: draft.workspace_id ?? null,
@@ -332,10 +330,6 @@ async function saveSnippet(id: string | null, draft: SnippetDraft) {
     p_language: draft.language,
     p_description: draft.description.trim(),
     p_code: draft.code,
-    p_benchmark_chars: benchmarks.benchmark_chars,
-    p_benchmark_bytes: benchmarks.benchmark_bytes,
-    p_benchmark_bits: benchmarks.benchmark_bits,
-    p_benchmark_lines: benchmarks.benchmark_lines,
     p_tags: draft.tags,
   });
 
