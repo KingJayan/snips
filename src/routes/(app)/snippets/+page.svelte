@@ -123,7 +123,7 @@
     } else if (key === "n" && canCreate) {
       event.preventDefault();
       snippetDialog = true;
-    } else if (key === "r") {
+    } else if (key === "r" && library.authenticated) {
       event.preventDefault();
       void refresh();
     } else if (key === "?") {

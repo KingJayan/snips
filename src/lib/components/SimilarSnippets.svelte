@@ -1,7 +1,7 @@
 <script lang="ts">
   import { LoaderCircle } from "@lucide/svelte";
   import { rankSimilarSnippets, type SimilarSnippetResult } from "#lib/ai/client-tools.ts";
-  import { getSnippetById, listSnippets } from "#lib/snippet-service.ts";
+  import { getSnippetsByIds, listSnippets } from "#lib/snippet-service.ts";
   import type { SnippetWithTags } from "#lib/types.ts";
   import ErrorNote from "./ErrorNote.svelte";
   import Badge from "./ui/Badge.svelte";
@@ -20,7 +20,8 @@
       const { data, error: listError } = await listSnippets({ workspaceId: snippet.workspace_id, limit: 30 });
       if (listError) throw new Error(listError);
       const ids = (data ?? []).filter((c) => c.id !== snippet.id).slice(0, 12).map((c) => c.id);
-      const candidates = (await Promise.all(ids.map(async (id) => (await getSnippetById(id)).data))).filter((c): c is SnippetWithTags => Boolean(c));
+      const { data: candidates, error: fetchError } = await getSnippetsByIds(ids);
+      if (fetchError || !candidates) throw new Error(fetchError ?? "failed to fetch snippets");
       results = candidates.length ? await rankSimilarSnippets({ target: snippet, candidates }) : [];
     } catch (findError) {
       error = findError instanceof Error ? findError.message : "failed to find similar snippets";
