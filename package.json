@@ -1,6 +1,6 @@
 {
   "name": "code-snippet-library",
-  "version": "1.4.8",
+  "version": "1.5.9",
   "private": true,
   "scripts": {
     "dev": "bun --bun next dev",

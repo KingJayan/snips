@@ -20,9 +20,9 @@ thanks for helping build this project
 4. run checks:
 
 ```bash
-npm run lint
-npx tsc --noEmit
-npm run build
+bun run lint
+bunx tsc --noEmit
+bun run build
 ```
 
 5. open your pull request with a short test note

@@ -22,24 +22,24 @@ next.js • typescript • tailwind • shadcn/ui
 supabase (postgres + auth)
 shiki • codemirror
 
-providers: openai • anthropic • gemini • ollama • openrouter  
+providers: openai • anthropic • gemini • ollama • openrouter
 
 ## preview
 
-dashboard  
+dashboard
 ![Snippets dashboard](docs/screenshots/snippets-dashboard.png)
 
-explorer  
+explorer
 ![Workspace explorer](docs/screenshots/workspace-explorer-light.png)
 
-ai panel  
+ai panel
 ![AI edits panel](docs/screenshots/ai-edits-panel.png)
 
 ## local setup
 
 ```bash
-npm install
-npm run dev
+bun i
+bun dev
 
 2. create `.env.local`
 
@@ -99,9 +99,9 @@ SNIPS_EXEC_PISTON_URL=
 ## scripts
 
 ```bash
-npm run lint
-npx tsc --noEmit
-npm run build
+bun run lint
+bunx tsc --noEmit
+bun run build
 ```
 
 ## contributing
