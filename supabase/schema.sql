@@ -380,3 +380,7 @@ alter table public.snippets add column if not exists pinned boolean not null def
 alter table public.snippets add column if not exists public boolean not null default false;
 alter table public.snippets add column if not exists view_count integer not null default 0;
 alter table public.snippets add column if not exists copy_count integer not null default 0;
+
+revoke insert, update on public.snippets from anon, authenticated;
+grant insert (user_id, workspace_id, title, language, description, code, pinned, public) on public.snippets to authenticated;
+grant update (workspace_id, title, language, description, code, pinned, public) on public.snippets to authenticated;
