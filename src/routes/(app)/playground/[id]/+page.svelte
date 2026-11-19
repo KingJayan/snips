@@ -6,8 +6,11 @@
   import Loading from "#lib/components/Loading.svelte";
   import NotFound from "#lib/components/NotFound.svelte";
   import SnippetPlayground from "#lib/components/SnippetPlayground.svelte";
-  import { getSnippetById } from "#lib/snippet-service.ts";
+  import { writeCachedSnippet } from "#lib/snippet-cache.ts";
+  import { toDraft } from "#lib/snippet-draft.ts";
+  import { getSnippetById, updateSnippet } from "#lib/snippet-service.ts";
   import { getCurrentUser } from "#lib/supabase.ts";
+  import { toast } from "#lib/toast.svelte.ts";
   import type { SnippetWithTags } from "#lib/types.ts";
 
   let snippet = $state<SnippetWithTags | null>(null);
@@ -33,6 +36,15 @@
     });
     return () => (active = false);
   });
+
+  async function save(code: string) {
+    if (!snippet) return;
+    const { data, error: saveError } = await updateSnippet(snippet.id, { ...toDraft(snippet), code });
+    if (!data) return void toast(saveError ?? "failed to save", "error");
+    snippet = data;
+    writeCachedSnippet(data);
+    toast("saved", "success");
+  }
 </script>
 
 {#if loading}
@@ -50,7 +62,7 @@
         </div>
         <a href="/{owned ? "snippets" : "public"}/{snippet.id}" class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft class="size-4" /> view snippet</a>
       </div>
-      <SnippetPlayground initialCode={snippet.code} initialLanguage={snippet.language} bind:dirty />
+      <SnippetPlayground initialCode={snippet.code} initialLanguage={snippet.language} bind:dirty onSave={owned ? save : undefined} />
     </main>
   </div>
 {/if}

@@ -10,7 +10,8 @@
   import Select from "./ui/Select.svelte";
   import Textarea from "./ui/Textarea.svelte";
 
-  let { initialCode, initialLanguage, dirty = $bindable(false) }: { initialCode: string; initialLanguage: string; dirty?: boolean } = $props();
+  type Props = { initialCode: string; initialLanguage: string; dirty?: boolean; onSave?: (code: string) => Promise<void> };
+  let { initialCode, initialLanguage, dirty = $bindable(false), onSave }: Props = $props();
 
   const initial = untrack(() => languageId(initialLanguage));
   const OPTIONS = [...new Set([initial, "python", "markdown", "plaintext"])].map((value) => ({ value, label: value }));
@@ -19,6 +20,7 @@
   let code = $state(untrack(() => initialCode));
   let stdin = $state("");
   let running = $state(false);
+  let saving = $state(false);
   let error = $state<string | null>(null);
   let result = $state<RunResult | null>(null);
 
@@ -37,6 +39,12 @@
   $effect(() => {
     dirty = code !== initialCode;
   });
+
+  async function save() {
+    saving = true;
+    await onSave!(code);
+    saving = false;
+  }
 
   async function run() {
     running = true;
@@ -59,6 +67,9 @@
     <h2 class="text-sm font-semibold tracking-tight">playground</h2>
     <div class="flex items-center gap-2">
       <Select bind:value={language} options={OPTIONS} class="w-auto" />
+      {#if onSave}
+        <Button size="sm" variant="outline" onclick={save} disabled={saving || !dirty}>{saving ? "saving..." : "save to snippet"}</Button>
+      {/if}
       <Button size="sm" onclick={run} disabled={running || !runnable}>
         {#if running}<LoaderCircle class="size-4 animate-spin" /> running...{:else}<Play class="size-4" /> run{/if}
       </Button>
