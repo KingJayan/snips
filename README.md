@@ -24,17 +24,6 @@ shiki • codemirror
 
 providers: openai • anthropic • gemini • openrouter • openai-compatible
 
-## preview
-
-dashboard
-![Snippets dashboard](docs/screenshots/snippets-dashboard.png)
-
-explorer
-![Workspace explorer](docs/screenshots/workspace-explorer-light.png)
-
-ai panel
-![AI edits panel](docs/screenshots/ai-edits-panel.png)
-
 ## local setup
 
 ```bash

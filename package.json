@@ -1,6 +1,6 @@
 {
   "name": "code-snippet-library",
-  "version": "1.5.9",
+  "version": "1.6.0",
   "private": true,
   "type": "module",
   "imports": {
@@ -14,6 +14,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "patch": "bun pm version patch --no-git-tag-version && git commit -am \"bump version\" && git push",
+    "minor": "bun pm version minor --no-git-tag-version && git commit -am \"bump version\" && git push",
+    "major": "bun pm version major --no-git-tag-version && git commit -am \"bump version\" && git push",
     "typecheck": "svelte-kit sync && svelte-check --fail-on-warnings"
   },
   "dependencies": {
