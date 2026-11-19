@@ -26,7 +26,7 @@ export const SECTIONS: Array<{ title: string; items: SettingItem[] }> = [
   {
     title: "keyboard",
     items: [
-      { kind: "toggle", key: SETTINGS_KEYS.vimShortcuts, label: "vim shortcuts", desc: "j/k to move through the list, y to copy, p to pin" },
+      { kind: "toggle", key: SETTINGS_KEYS.vimShortcuts, label: "vim shortcuts", desc: "j/k, enter and p in the list; y and p on a snippet" },
       { kind: "toggle", key: SETTINGS_KEYS.showHints, label: "search hints", desc: "show filter examples in the search box", fallback: true },
     ],
   },

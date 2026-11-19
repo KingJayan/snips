@@ -1,6 +1,7 @@
 <script lang="ts">
   import { LoaderCircle, Plus, RefreshCw } from "@lucide/svelte";
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
   import AppHeader from "#lib/components/AppHeader.svelte";
   import NameDialog from "#lib/components/NameDialog.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
@@ -25,6 +26,11 @@
     { key: "r", action: "refresh snippets" },
     { key: "?", action: "show shortcuts" },
     { key: "esc", action: "close dialog / clear search / clear tag filter" },
+  ];
+  const VIM_SHORTCUTS = [
+    { key: "j / k", action: "move through the list" },
+    { key: "enter", action: "open snippet" },
+    { key: "p", action: "pin / unpin" },
   ];
 
   const library = new Library();
@@ -115,6 +121,11 @@
     if (vim.value && (key === "j" || key === "k") && filtered.length) {
       event.preventDefault();
       cursor = Math.max(0, Math.min(filtered.length - 1, (selected ?? 0) + (key === "j" ? 1 : -1)));
+    } else if (selected !== null && (key === "p" || (key === "enter" && event.target === document.body))) {
+      event.preventDefault();
+      const snippet = filtered[selected];
+      if (key === "enter") void goto(`/snippets/${snippet.id}`);
+      else void library.togglePin(snippet.id, !snippet.pinned);
     } else if (key === "/") {
       event.preventDefault();
       searchInput?.focus();
@@ -230,5 +241,5 @@
   onSubmit={submitName}
 />
 
-<ShortcutsPanel bind:open={shortcuts} shortcuts={SHORTCUTS} />
+<ShortcutsPanel bind:open={shortcuts} shortcuts={vim.value ? [...SHORTCUTS, ...VIM_SHORTCUTS] : SHORTCUTS} />
 
