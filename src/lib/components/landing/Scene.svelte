@@ -14,6 +14,7 @@
     { zMin: -18, zMax: -26, opacity: 0.32, frac: 0.37, xSpread: 26, ySpread: 15, xGap: 0 },
   ];
 
+  const xScale = Math.min(1, window.innerWidth / window.innerHeight / 1.6);
   const jitter = (spread: number) => (Math.random() - 0.5) * spread;
 
   function shuffle<T>(items: T[]) {
@@ -28,16 +29,18 @@
     const snippets = shuffle([...LANDING_SNIPPETS]);
     return LAYERS.flatMap((layer) => {
       const n = Math.max(1, Math.round(total * layer.frac));
+      const xSpread = layer.xSpread * xScale;
+      const xGap = layer.xGap * xScale;
       const cols = Math.ceil(Math.sqrt(n * 1.6));
       const rows = Math.ceil(n / cols);
-      const cellW = layer.xSpread / Math.max(cols - 1, 1);
+      const cellW = xSpread / Math.max(cols - 1, 1);
       const cellH = layer.ySpread / Math.max(rows - 1, 1);
       const points: [number, number][] = [];
       for (let r = 0; r < rows && points.length < n; r++) {
         for (let c = 0; c < cols && points.length < n; c++) {
-          const x = cols > 1 ? (c / (cols - 1) - 0.5) * layer.xSpread : 0;
+          const x = cols > 1 ? (c / (cols - 1) - 0.5) * xSpread : 0;
           const y = rows > 1 ? (r / (rows - 1) - 0.5) * layer.ySpread : 0;
-          if (layer.xGap > 0 && Math.abs(x) < layer.xGap) continue;
+          if (xGap > 0 && Math.abs(x) < xGap) continue;
           points.push([x + jitter(cellW * 0.65), y + jitter(cellH * 0.65)]);
         }
       }

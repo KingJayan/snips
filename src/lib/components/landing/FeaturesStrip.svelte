@@ -12,7 +12,7 @@
     <div class="border-b border-border/60 px-8 py-10">
       <p class="mb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">what's inside</p>
       <h2 class="text-2xl font-semibold text-foreground" style:font-family="var(--font-display)">
-        everything you actually need.<span class="text-muted-foreground"> nothing you don't.</span>
+        save it once. <span class="text-muted-foreground">find it in two keystrokes.</span>
       </h2>
     </div>
     <div class="grid grid-cols-1 border-b border-border/60 sm:grid-cols-2">

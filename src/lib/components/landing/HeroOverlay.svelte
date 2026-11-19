@@ -2,7 +2,7 @@
   import Button from "../ui/Button.svelte";
 </script>
 
-<div aria-hidden="true" class="pointer-events-none absolute inset-0 z-[5] bg-[radial-gradient(ellipse_58%_52%_at_50%_50%,color-mix(in_oklch,var(--background)_82%,transparent)_0%,transparent_68%)]"></div>
+<div aria-hidden="true" class="pointer-events-none absolute inset-0 z-[5] bg-[radial-gradient(ellipse_64%_58%_at_50%_50%,color-mix(in_oklch,var(--background)_94%,transparent)_0%,transparent_72%)]"></div>
 
 <div class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center px-6">
   <div class="pointer-events-auto flex max-w-3xl flex-col items-center text-center [&>*]:animate-subtle-fade-up [&>*]:[animation-fill-mode:both]">
