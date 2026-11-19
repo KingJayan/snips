@@ -6,5 +6,5 @@ export async function GET() {
   if (!client) return json({ ok: true, db: "not-configured" });
 
   const { error } = await client.from("snippets").select("id").limit(1);
-  return json(error ? { ok: true, db: "query-error", error: error.message } : { ok: true, db: "ok" });
+  return json(error ? { ok: true, db: "query-error" } : { ok: true, db: "ok" });
 }

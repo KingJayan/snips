@@ -35,5 +35,5 @@ export function downloadSnippet(snippet: Pick<SnippetWithTags, "title" | "langua
   const url = textBlob(snippet.code);
   const anchor = Object.assign(document.createElement("a"), { href: url, download: snippetFileName(snippet) });
   anchor.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }

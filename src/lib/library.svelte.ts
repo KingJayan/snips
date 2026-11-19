@@ -34,7 +34,7 @@ export class Library {
 
   #controller: AbortController | null = null;
 
-  async refresh(background = false) {
+  async refresh() {
     const user = await getCurrentUser().catch(() => null);
     this.authenticated = Boolean(user);
     if (user?.email) this.email = user.email;
@@ -52,7 +52,7 @@ export class Library {
     this.error = error;
     this.workspaces = data ?? [];
     const keep = this.workspaces.some((w) => w.id === this.activeId);
-    await this.select(keep ? this.activeId : (this.workspaces[0]?.id ?? null), background);
+    await this.select(keep ? this.activeId : (this.workspaces[0]?.id ?? null));
   }
 
   async select(id: string | null, useCache = true) {

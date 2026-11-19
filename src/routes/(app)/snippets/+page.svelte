@@ -61,11 +61,11 @@
 
   onMount(() => {
     if (!supabase) {
-      void library.refresh(true);
+      void library.refresh();
       return;
     }
     const { subscription } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "TOKEN_REFRESHED") void library.refresh(true);
+      if (event !== "TOKEN_REFRESHED") void library.refresh();
     }).data;
     return () => {
       subscription.unsubscribe();
