@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Globe, LoaderCircle, Lock, PanelRightOpen, Pencil, Pin, Share2, Trash } from "@lucide/svelte";
   import { fly } from "svelte/transition";
-  import { beforeNavigate, goto } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import AiChat from "#lib/components/AiChat.svelte";
   import CodeBlock from "#lib/components/CodeBlock.svelte";
@@ -15,6 +15,7 @@
   import SnippetMeta from "#lib/components/SnippetMeta.svelte";
   import Button from "#lib/components/ui/Button.svelte";
   import Select from "#lib/components/ui/Select.svelte";
+  import { ask, confirmLeave } from "#lib/confirm.svelte.ts";
   import { boolSetting, SETTINGS_KEYS } from "#lib/settings.ts";
   import { readCachedSnippet, writeCachedSnippet } from "#lib/snippet-cache.ts";
   import { draftChanged, toDraft, validateDraft } from "#lib/snippet-draft.ts";
@@ -46,12 +47,10 @@
   const aiMinimized = $derived(aiOverride ?? !aiDefault.value);
   const dirty = $derived(Boolean(editing && snippet && draftChanged(editing.draft, editing.tags, toDraft(snippet))));
 
-  beforeNavigate((navigation) => {
-    if (dirty && navigation.type !== "leave" && !confirm("you have unsaved changes. leave anyway?")) navigation.cancel();
-  });
+  confirmLeave(() => dirty);
 
-  function cancelEditing() {
-    if (!dirty || confirm("discard your changes?")) editing = null;
+  async function cancelEditing() {
+    if (!dirty || (await ask("discard your changes?", "discard"))) editing = null;
   }
 
   $effect(() => {
@@ -114,7 +113,7 @@
   }
 
   async function remove(s: SnippetWithTags) {
-    if (deleting || !confirm("delete this snippet?")) return;
+    if (deleting || !(await ask("delete this snippet?", "delete"))) return;
     deleting = true;
     toast("deleting snippet...");
     const { error: serviceError } = await deleteSnippet(s.id);
@@ -168,7 +167,7 @@
   }
 </script>
 
-<svelte:window onkeydown={onKeydown} onbeforeunload={(e) => dirty && e.preventDefault()} />
+<svelte:window onkeydown={onKeydown} />
 
 {#if loading}
   <Loading label="loading snippet..." />
@@ -243,8 +242,8 @@
           <AiChat
             snippet={editing ? editing.draft : current}
             onMinimize={() => (aiOverride = true)}
-            onApplyCode={(code) => {
-              if (editing && editing.draft.code !== current.code && !confirm("replace your edited code with the ai suggestion?")) return;
+            onApplyCode={async (code) => {
+              if (editing && editing.draft.code !== current.code && !(await ask("replace your edited code with the ai suggestion?", "replace"))) return;
               toast("ai suggestion loaded into editor", "success");
               if (editing) editing.draft.code = code;
               else startEditing(code);

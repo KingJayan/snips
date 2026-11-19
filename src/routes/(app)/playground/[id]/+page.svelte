@@ -1,11 +1,11 @@
 <script lang="ts">
   import { ArrowLeft } from "@lucide/svelte";
-  import { beforeNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import AppHeader from "#lib/components/AppHeader.svelte";
   import Loading from "#lib/components/Loading.svelte";
   import NotFound from "#lib/components/NotFound.svelte";
   import SnippetPlayground from "#lib/components/SnippetPlayground.svelte";
+  import { confirmLeave } from "#lib/confirm.svelte.ts";
   import { writeCachedSnippet } from "#lib/snippet-cache.ts";
   import { toDraft } from "#lib/snippet-draft.ts";
   import { getSnippetById, updateSnippet } from "#lib/snippet-service.ts";
@@ -19,9 +19,7 @@
   let dirty = $state(false);
   let owned = $state(false);
 
-  beforeNavigate((navigation) => {
-    if (dirty && navigation.type !== "leave" && !confirm("you have unsaved changes. leave anyway?")) navigation.cancel();
-  });
+  confirmLeave(() => owned && dirty);
 
   $effect(() => {
     const id = page.params.id ?? "";

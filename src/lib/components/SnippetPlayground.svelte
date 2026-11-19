@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import { LoaderCircle, Play } from "@lucide/svelte";
-  import { languageId } from "#lib/constants.ts";
+  import { canRun, languageId } from "#lib/constants.ts";
   import { RUN_TIMEOUT_MS, runPython, type RunResult } from "#lib/execution/browser-runner.ts";
   import { renderMarkdown } from "#lib/utils.ts";
   import CodeEditor from "./CodeEditor.svelte";
@@ -24,7 +24,7 @@
   let error = $state<string | null>(null);
   let result = $state<RunResult | null>(null);
 
-  const runnable = $derived(language === "python");
+  const runnable = $derived(canRun(language));
   const lineCount = $derived(code ? code.split("\n").length : 0);
   const note = $derived(
     runnable
@@ -59,8 +59,6 @@
     }
   }
 </script>
-
-<svelte:window onbeforeunload={(e) => dirty && e.preventDefault()} />
 
 <section class="space-y-3 rounded-2xl border border-border/70 bg-card/70 p-3">
   <div class="flex flex-wrap items-center justify-between gap-2">

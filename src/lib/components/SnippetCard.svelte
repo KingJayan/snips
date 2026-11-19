@@ -1,7 +1,9 @@
 <script lang="ts">
   import { Globe, Pin, Play, Trash } from "@lucide/svelte";
+  import { canRun, extraTags } from "#lib/constants.ts";
   import { timeAgo } from "#lib/time.ts";
   import type { SnippetSummaryWithTags } from "#lib/types.ts";
+  import { ask } from "#lib/confirm.svelte.ts";
   import { badgeVariants } from "./ui/variants";
   import { cn } from "#lib/utils.ts";
 
@@ -17,6 +19,8 @@
   };
 
   let { snippet, basePath = "/snippets", selected = false, onTagClick, onTogglePin, onDelete, onDragStart, onDragEnd }: Props = $props();
+
+  const tags = $derived(extraTags(snippet.tags, snippet.language));
 
   function dragStart(event: DragEvent) {
     if (!event.dataTransfer) return;
@@ -46,14 +50,11 @@
     </div>
 
     <div class="relative z-10 flex shrink-0 items-center gap-1">
-      <a
-        href="/playground/{snippet.id}"
-        class="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        aria-label="open in playground"
-        title="open in playground"
-      >
-        <Play class="size-3" />
-      </a>
+      {#if canRun(snippet.language)}
+        <a href="/playground/{snippet.id}" class="inline-flex items-center gap-1 rounded border border-border/70 px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+          <Play class="size-3" /> run
+        </a>
+      {/if}
 
       {#if onTogglePin}
         <button
@@ -67,7 +68,7 @@
 
       {#if onDelete}
         <button
-          onclick={() => confirm(`delete "${snippet.title}"?`) && onDelete(snippet.id)}
+          onclick={async () => (await ask(`delete "${snippet.title}"?`, "delete")) && onDelete(snippet.id)}
           class="rounded p-1 text-muted-foreground transition-colors pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
           aria-label="delete snippet"
         >
@@ -82,9 +83,9 @@
     </div>
   </div>
 
-  {#if snippet.tags.length}
+  {#if tags.length}
     <div class="relative z-10 flex flex-wrap gap-1">
-      {#each snippet.tags.slice(0, 4) as tag (tag.id)}
+      {#each tags.slice(0, 4) as tag (tag.id)}
         <button
           type="button"
           class={cn(badgeVariants({ variant: "outline" }), "max-w-28 cursor-pointer truncate text-xs transition-colors hover:bg-accent")}
@@ -95,8 +96,8 @@
           {tag.name}
         </button>
       {/each}
-      {#if snippet.tags.length > 4}
-        <span class="text-xs text-muted-foreground">+{snippet.tags.length - 4}</span>
+      {#if tags.length > 4}
+        <span class="text-xs text-muted-foreground">+{tags.length - 4}</span>
       {/if}
     </div>
   {/if}

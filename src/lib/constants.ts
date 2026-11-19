@@ -27,3 +27,7 @@ export function languageId(value: string) {
   const lower = value.trim().toLowerCase();
   return lower in LANGUAGES ? lower : (LANGUAGE_OPTIONS.find((option) => option.label === lower)?.value ?? lower);
 }
+
+export const canRun = (language: string) => languageId(language) === "python";
+
+export const extraTags = <T extends { name: string }>(tags: T[], language: string) => tags.filter((tag) => languageId(tag.name) !== languageId(language));

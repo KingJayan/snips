@@ -40,7 +40,7 @@
   <main class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:py-8 motion-safe-enter">
     <SnippetActions snippet={current} back="/public" onCopied={() => (current.copy_count += 1)} />
     <header class="space-y-3 rounded-2xl border border-border/70 bg-card/70 p-4">
-      <SnippetMeta snippet={current} />
+      <SnippetMeta snippet={current} showPublic={false} />
     </header>
     <CodeBlock code={current.code} language={current.language} />
     <p class="text-center text-xs text-muted-foreground"><a href="/snippets" class="underline underline-offset-4 hover:text-foreground">save your own snippets with snips</a></p>

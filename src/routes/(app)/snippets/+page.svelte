@@ -13,6 +13,7 @@
   import UserChip from "#lib/components/UserChip.svelte";
   import WorkspaceNav, { type WorkspaceAction } from "#lib/components/WorkspaceNav.svelte";
   import Button from "#lib/components/ui/Button.svelte";
+  import { ask } from "#lib/confirm.svelte.ts";
   import { Library } from "#lib/library.svelte.ts";
   import { collectTags, filterSnippets } from "#lib/search.ts";
   import { boolSetting, SETTINGS_KEYS } from "#lib/settings.ts";
@@ -59,7 +60,7 @@
       { id: "rename", label: "rename", onClick: () => (nameDialog = "rename"), disabled: blocked || !library.active },
       { id: "share", label: library.active?.is_public ? "make private" : "make public", onClick: toggleShare, disabled: blocked || !library.active },
       ...(library.active?.is_public ? [{ id: "link", label: "copy public link", onClick: () => library.activeId && copyWorkspaceLink(library.activeId) }] : []),
-      { id: "delete", label: "delete", onClick: () => confirm(`delete ${library.active?.name} and all its snippets? this cannot be undone.`) && library.deleteWorkspace(), disabled: blocked || !library.active || library.workspaces.length <= 1, destructive: true },
+      { id: "delete", label: "delete", onClick: async () => (await ask(`delete ${library.active?.name} and all its snippets? this cannot be undone.`, "delete")) && library.deleteWorkspace(), disabled: blocked || !library.active || library.workspaces.length <= 1, destructive: true },
     ];
   });
 
@@ -93,7 +94,7 @@
   async function toggleShare() {
     const workspace = library.active;
     if (!workspace) return;
-    if (!workspace.is_public && !confirm("make this workspace public? every snippet in it, including private ones, will be readable by anyone.")) return;
+    if (!workspace.is_public && !(await ask("make this workspace public? every snippet in it, including private ones, will be readable by anyone.", "make public"))) return;
     if (!(await library.toggleShare()) && !workspace.is_public) await copyWorkspaceLink(workspace.id);
   }
 
@@ -115,7 +116,7 @@
   }
 
   function onKeydown(event: KeyboardEvent) {
-    if (ignoresShortcuts(event.target)) return;
+    if (!library.authenticated || ignoresShortcuts(event.target)) return;
     const key = event.key.toLowerCase();
 
     if (vim.value && (key === "j" || key === "k") && filtered.length) {

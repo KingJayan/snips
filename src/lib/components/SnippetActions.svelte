@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { ArrowLeft, Copy, Download, Eye, Play } from "@lucide/svelte";
+  import { canRun } from "#lib/constants.ts";
   import { formatSnippetForCopy, type SnippetCopyMode } from "#lib/copy-modes.ts";
   import { incrementSnippetCounter } from "#lib/snippet-service.ts";
   import { downloadSnippet, viewRaw } from "#lib/snippet-file.ts";
@@ -35,8 +36,10 @@
   <div class="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
     <a href={back} class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground sm:text-sm"><ArrowLeft class="size-4" /> back</a>
     <div class="flex flex-wrap items-center gap-1.5">
-      <Select bind:value={mode} options={MODES} class="h-7 w-auto px-1.5 sm:h-8 sm:px-2" aria-label="copy mode" />
-      <Button variant="outline" size="icon-sm" onclick={copy} aria-label="copy" tip="copy"><Copy class="size-4" /></Button>
+      <div class="flex">
+        <Select bind:value={mode} options={MODES} class="h-7 w-auto rounded-r-none border-r-0 px-1.5 sm:h-8 sm:px-2" aria-label="copy mode" />
+        <Button variant="outline" size="sm" class="h-7 rounded-l-none sm:h-8" onclick={copy}><Copy class="size-4" /> copy</Button>
+      </div>
       <Button variant="outline" size="icon-sm" onclick={() => viewRaw(snippet.code)} aria-label="view raw" tip="view raw"><Eye class="size-4" /></Button>
       <Button
         variant="outline"
@@ -50,7 +53,9 @@
       >
         <Download class="size-4" />
       </Button>
-      <Button variant="outline" size="icon-sm" href="/playground/{snippet.id}" aria-label="open in playground" tip="playground"><Play class="size-4" /></Button>
+      {#if canRun(snippet.language)}
+        <Button variant="outline" size="sm" class="h-7 sm:h-8" href="/playground/{snippet.id}"><Play class="size-4" /> run</Button>
+      {/if}
       {#if children}
         <span class="mx-1 h-5 w-px bg-border" aria-hidden="true"></span>
         {@render children()}

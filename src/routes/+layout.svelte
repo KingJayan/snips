@@ -1,6 +1,7 @@
 <script lang="ts">
   import "../app.css";
   import { dev } from "$app/env";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import DevDebugPanel from "#lib/components/DevDebugPanel.svelte";
   import SettingsDialog from "#lib/components/settings/SettingsDialog.svelte";
   import Toaster from "#lib/components/Toaster.svelte";
@@ -12,7 +13,7 @@
 </script>
 
 <svelte:head>
-  <title>snips - code snippet library</title>
+  <title>Snips - code snippet library</title>
   <meta name="description" content="personal vault for reusable code" />
 </svelte:head>
 
@@ -20,3 +21,4 @@
 <Toaster />
 {#if dev}<DevDebugPanel />{/if}
 <SettingsDialog />
+<ConfirmDialog />

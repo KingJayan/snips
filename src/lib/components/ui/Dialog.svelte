@@ -9,14 +9,14 @@
     description?: string | Snippet;
     class?: string;
     headerClass?: string;
-    canClose?: () => boolean;
+    canClose?: () => boolean | Promise<boolean>;
     children: Snippet;
   };
 
   let { open = $bindable(), title, description, class: className, headerClass, canClose = () => true, children }: Props = $props();
   let dialog: HTMLDialogElement;
 
-  const close = () => canClose() && (open = false);
+  const close = async () => (await canClose()) && (open = false);
 
   $effect(() => {
     if (open && !dialog.open) dialog.showModal();
