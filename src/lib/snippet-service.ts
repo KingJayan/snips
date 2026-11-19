@@ -214,6 +214,7 @@ function parseSupabaseError(error: PostgrestError | null) {
   if (!error) return null;
 
   if (error.code === "PGRST116" || error.code === "22P02") return NOT_FOUND;
+  if (error.code === "23505") return "that name is already taken";
 
   const message = `${error.message} ${error.details ?? ""} ${error.hint ?? ""}`;
 
