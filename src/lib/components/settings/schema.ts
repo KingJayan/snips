@@ -1,5 +1,5 @@
 import { CHAT_MODES } from "#lib/ai/chat-types.ts";
-import { CODE_THEMES } from "#lib/code-highlight.ts";
+import { CODE_THEMES, DEFAULT_CODE_THEME } from "#lib/code-highlight.ts";
 import { SETTINGS_KEYS } from "#lib/settings.ts";
 
 type Base = { key: string; label: string; desc?: string };
@@ -11,7 +11,7 @@ export const SECTIONS: Array<{ title: string; items: SettingItem[] }> = [
   {
     title: "appearance",
     items: [
-      { kind: "select", key: SETTINGS_KEYS.codeTheme, label: "code theme", fallback: "github-dark", options: CODE_THEMES },
+      { kind: "select", key: SETTINGS_KEYS.codeTheme, label: "code theme", fallback: DEFAULT_CODE_THEME, options: CODE_THEMES },
       { kind: "toggle", key: SETTINGS_KEYS.wrapCodeLines, label: "wrap long code lines", desc: "avoid horizontal scroll in code blocks" },
       { kind: "toggle", key: SETTINGS_KEYS.compactLayout, label: "compact layout", desc: "tighter spacing on cards and code" },
     ],

@@ -1,16 +1,19 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import type { EditorView } from "@codemirror/view";
+  import { codeTheme, DEFAULT_CODE_THEME } from "#lib/code-highlight.ts";
   import { createEditor } from "#lib/editor.ts";
+  import { SETTINGS_KEYS, stringSetting } from "#lib/settings.ts";
 
   type Props = { value: string; language?: string; class?: string; placeholder?: string; readOnly?: boolean };
 
   let { value = $bindable(), language = "plaintext", class: className, placeholder, readOnly = false }: Props = $props();
   let container: HTMLDivElement;
   let view: EditorView | undefined;
+  const themeSetting = stringSetting(SETTINGS_KEYS.codeTheme, DEFAULT_CODE_THEME);
 
   $effect(() => {
-    const options = { language, readOnly, placeholder };
+    const options = { language, readOnly, placeholder, theme: codeTheme(themeSetting.value) };
     view = untrack(() => createEditor(container, { ...options, doc: value, onChange: (next) => (value = next) }));
     return () => view?.destroy();
   });

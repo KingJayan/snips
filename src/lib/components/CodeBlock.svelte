@@ -1,12 +1,12 @@
 <script lang="ts">
   import { LoaderCircle, Palette } from "@lucide/svelte";
-  import { CODE_THEMES, cacheKey, cachedHighlight, codeTheme, highlight, type CodeTheme } from "#lib/code-highlight.ts";
+  import { CODE_THEMES, DEFAULT_CODE_THEME, cacheKey, cachedHighlight, codeTheme, highlight, type CodeTheme } from "#lib/code-highlight.ts";
   import { boolSetting, SETTINGS_KEYS, stringSetting } from "#lib/settings.ts";
   import { cn } from "#lib/utils.ts";
 
   let { code, language, class: className }: { code: string; language: string; class?: string } = $props();
 
-  const themeSetting = stringSetting<CodeTheme>(SETTINGS_KEYS.codeTheme, "github-dark");
+  const themeSetting = stringSetting<CodeTheme>(SETTINGS_KEYS.codeTheme, DEFAULT_CODE_THEME);
   const wrap = boolSetting(SETTINGS_KEYS.wrapCodeLines);
   const colors = $derived(codeTheme(themeSetting.value));
   const key = $derived(cacheKey(code, language, colors.value));

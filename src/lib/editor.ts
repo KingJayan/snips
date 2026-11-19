@@ -13,7 +13,8 @@ import { sql } from "@codemirror/lang-sql";
 import { yaml } from "@codemirror/lang-yaml";
 import { bracketMatching, defaultHighlightStyle, foldGutter, foldKeymap, indentOnInput, syntaxHighlighting } from "@codemirror/language";
 import { EditorState, type Extension } from "@codemirror/state";
-import { oneDark } from "@codemirror/theme-one-dark";
+import { oneDarkHighlightStyle } from "@codemirror/theme-one-dark";
+import type { CodeThemeOption } from "#lib/code-highlight.ts";
 import {
   crosshairCursor,
   drawSelection,
@@ -43,57 +44,50 @@ const LANGUAGE_EXTENSIONS: Record<string, () => Extension> = {
   md: markdown,
 };
 
-const appTheme = EditorView.theme({
-  "&": { fontSize: "12px", fontFamily: "var(--font-jetbrains-mono, monospace)", height: "100%" },
-  ".cm-scroller": { fontFamily: "var(--font-jetbrains-mono, monospace)", lineHeight: "1.65", overflow: "auto" },
-  "&.cm-editor": { borderRadius: "inherit", height: "100%" },
-  "&.cm-editor.cm-focused": { outline: "none" },
-  ".cm-gutters": {
-    backgroundColor: "transparent",
-    borderRight: "1px solid var(--border-color, rgba(255,255,255,0.06))",
-    color: "var(--gutter-color, rgba(255,255,255,0.18))",
-    minWidth: "2.8em",
-  },
-  ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--gutter-active-color, rgba(255,255,255,0.45))" },
-  ".cm-lineNumbers": { minWidth: "2.8em" },
-  ".cm-foldGutter": { minWidth: "1em" },
-  ".cm-foldGutter .cm-gutterElement": { padding: "0 2px" },
-  ".cm-content": { padding: "8px 4px", caretColor: "var(--caret-color, #e2e8f0)" },
-  ".cm-activeLine": { backgroundColor: "var(--active-line-bg, rgba(255,255,255,0.03))", borderRadius: "2px" },
-  ".cm-selectionBackground, .cm-focused .cm-selectionBackground, ::selection": {
-    backgroundColor: "var(--selection-bg, rgba(99,102,241,0.25)) !important",
-  },
-  ".cm-cursor": { borderLeftColor: "var(--caret-color, #e2e8f0)", borderLeftWidth: "2px" },
-  ".cm-matchingBracket": { backgroundColor: "rgba(99,102,241,0.2)", outline: "1px solid rgba(99,102,241,0.4)", borderRadius: "2px" },
-  ".cm-tooltip": {
-    border: "1px solid var(--border-color, rgba(255,255,255,0.1))",
-    borderRadius: "6px",
-    backgroundColor: "var(--tooltip-bg, #1c1c1e)",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-  },
-  ".cm-tooltip-autocomplete": {
-    "& > ul > li": { padding: "3px 10px", fontSize: "11px", lineHeight: "1.5", fontFamily: "var(--font-jetbrains-mono, monospace)" },
-    "& > ul > li[aria-selected]": { backgroundColor: "rgba(99,102,241,0.25)", color: "#e2e8f0" },
-  },
-  ".cm-completionIcon": { opacity: "0.6" },
-});
+const appTheme = ({ bg, border, text, dark }: CodeThemeOption) =>
+  EditorView.theme(
+    {
+      "&": { fontSize: "12px", fontFamily: "var(--font-jetbrains-mono, monospace)", height: "100%", backgroundColor: bg, color: text },
+      ".cm-scroller": { fontFamily: "var(--font-jetbrains-mono, monospace)", lineHeight: "1.65", overflow: "auto" },
+      "&.cm-editor": { borderRadius: "inherit", height: "100%" },
+      "&.cm-editor.cm-focused": { outline: "none" },
+      ".cm-gutters": { backgroundColor: "transparent", borderRight: `1px solid ${border}`, color: `color-mix(in srgb, ${text} 35%, transparent)`, minWidth: "2.8em" },
+      ".cm-activeLineGutter": { backgroundColor: "transparent", color: text },
+      ".cm-lineNumbers": { minWidth: "2.8em" },
+      ".cm-foldGutter": { minWidth: "1em" },
+      ".cm-foldGutter .cm-gutterElement": { padding: "0 2px" },
+      ".cm-content": { padding: "8px 4px", caretColor: text },
+      ".cm-activeLine": { backgroundColor: `color-mix(in srgb, ${text} 5%, transparent)`, borderRadius: "2px" },
+      ".cm-selectionBackground, .cm-focused .cm-selectionBackground, ::selection": { backgroundColor: "rgba(99,102,241,0.25) !important" },
+      ".cm-cursor": { borderLeftColor: text, borderLeftWidth: "2px" },
+      ".cm-matchingBracket": { backgroundColor: "rgba(99,102,241,0.2)", outline: "1px solid rgba(99,102,241,0.4)", borderRadius: "2px" },
+      ".cm-tooltip": { border: `1px solid ${border}`, borderRadius: "6px", backgroundColor: bg, color: text, boxShadow: "0 4px 16px rgba(0,0,0,0.4)" },
+      ".cm-tooltip-autocomplete": {
+        "& > ul > li": { padding: "3px 10px", fontSize: "11px", lineHeight: "1.5", fontFamily: "var(--font-jetbrains-mono, monospace)" },
+        "& > ul > li[aria-selected]": { backgroundColor: "rgba(99,102,241,0.25)", color: text },
+      },
+      ".cm-completionIcon": { opacity: "0.6" },
+    },
+    { dark }
+  );
 
 type EditorOptions = {
   doc: string;
   language: string;
   readOnly: boolean;
   placeholder?: string;
+  theme: CodeThemeOption;
   onChange: (value: string) => void;
 };
 
-export function createEditor(parent: HTMLElement, { doc, language, readOnly, placeholder, onChange }: EditorOptions) {
+export function createEditor(parent: HTMLElement, { doc, language, readOnly, placeholder, theme, onChange }: EditorOptions) {
   return new EditorView({
     parent,
     state: EditorState.create({
       doc,
       extensions: [
-        oneDark,
-        appTheme,
+        appTheme(theme),
+        theme.dark ? syntaxHighlighting(oneDarkHighlightStyle) : [],
         history(),
         drawSelection(),
         dropCursor(),
