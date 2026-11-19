@@ -12,7 +12,6 @@
   import UserChip from "#lib/components/UserChip.svelte";
   import WorkspaceNav, { type WorkspaceAction } from "#lib/components/WorkspaceNav.svelte";
   import Button from "#lib/components/ui/Button.svelte";
-  import Dialog from "#lib/components/ui/Dialog.svelte";
   import { Library } from "#lib/library.svelte.ts";
   import { collectTags, filterSnippets } from "#lib/search.ts";
   import { boolSetting, SETTINGS_KEYS } from "#lib/settings.ts";
@@ -40,7 +39,6 @@
   let snippetDialog = $state(false);
   let shortcuts = $state(false);
   let nameDialog = $state<"create" | "rename" | null>(null);
-  let deleteDialog = $state(false);
   let auth = $state({ busy: false, message: null as string | null, error: null as string | null });
 
   const filtered = $derived(filterSnippets(library.snippets, search, activeTag));
@@ -55,7 +53,7 @@
       { id: "rename", label: "rename", onClick: () => (nameDialog = "rename"), disabled: blocked || !library.active },
       { id: "share", label: library.active?.is_public ? "make private" : "make public", onClick: toggleShare, disabled: blocked || !library.active },
       ...(library.active?.is_public ? [{ id: "link", label: "copy public link", onClick: () => library.activeId && copyWorkspaceLink(library.activeId) }] : []),
-      { id: "delete", label: "delete", onClick: () => (deleteDialog = true), disabled: blocked || !library.active || library.workspaces.length <= 1, destructive: true },
+      { id: "delete", label: "delete", onClick: () => confirm(`delete ${library.active?.name} and all its snippets? this cannot be undone.`) && library.deleteWorkspace(), disabled: blocked || !library.active || library.workspaces.length <= 1, destructive: true },
     ];
   });
 
@@ -231,15 +229,6 @@
   busy={library.busy}
   onSubmit={submitName}
 />
-
-{#snippet deleteDescription()}delete <span class="font-medium">{library.active?.name ?? "workspace"}</span> and all snippets in it. this cannot be undone.{/snippet}
-
-<Dialog bind:open={deleteDialog} title="delete workspace" description={deleteDescription} class="max-w-md rounded-2xl border-border/70">
-  <div class="flex flex-col-reverse gap-2 px-6 pb-6 sm:flex-row sm:justify-end">
-    <Button variant="outline" onclick={() => (deleteDialog = false)} disabled={library.busy}>cancel</Button>
-    <Button variant="destructive" disabled={library.busy} onclick={async () => !(await library.deleteWorkspace()) && (deleteDialog = false)}>delete</Button>
-  </div>
-</Dialog>
 
 <ShortcutsPanel bind:open={shortcuts} shortcuts={SHORTCUTS} />
 
