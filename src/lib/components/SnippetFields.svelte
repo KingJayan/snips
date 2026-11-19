@@ -23,7 +23,7 @@
       else draft.description = await generateDescriptionForSnippet(draft);
     } catch (aiError) {
       const message = aiError instanceof Error ? aiError.message : `failed to generate ${kind}`;
-      error = message.includes("api key is required") ? "no api key — add one in the ai panel" : message;
+      error = message.includes("api key is required") ? "no api key — add one in the ai panel on a snippet page" : message;
     } finally {
       busy = null;
     }

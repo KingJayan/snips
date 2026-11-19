@@ -12,7 +12,8 @@ export type ChatProvider =
   | "openrouter"
   | "openai-compatible";
 
-export type ChatMode = "improve" | "refactor" | "debug" | "explain";
+export const CHAT_MODES = ["improve", "refactor", "debug", "explain"] as const;
+export type ChatMode = (typeof CHAT_MODES)[number];
 
 export type ChatSnippet = {
   title?: string;

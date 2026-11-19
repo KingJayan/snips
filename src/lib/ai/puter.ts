@@ -1,5 +1,5 @@
-import type { ChatMode } from "#lib/ai/chat-types.ts";
-import type { SnippetWithTags } from "#lib/types.ts";
+import { normalizeMessages } from "#lib/ai/chat-normalize.ts";
+import type { ChatMessage, ChatMode, ChatSnippet } from "#lib/ai/chat-types.ts";
 
 type PuterWindow = Window & { puter?: { ai?: { chat?: (prompt: string, options?: { model?: string }) => Promise<unknown> } } };
 
@@ -25,38 +25,18 @@ function replyText(value: unknown): string {
   return (text as string | undefined) ?? "";
 }
 
-const MODE_INSTRUCTION: Record<ChatMode, string> = {
-  improve: "Task mode: Improve this snippet for correctness, performance, and maintainability.",
-  refactor: "Task mode: Refactor this snippet while preserving behavior.",
-  debug: "Task mode: Debug this snippet and provide fixed code.",
-  explain: "Task mode: Explain this snippet clearly. Only provide edits if explicitly requested.",
-};
-
 export const PUTER_AUTH_ERROR = "puterjs requires an authenticated puter session. sign in to puter, then retry, or use another provider.";
 
 export async function puterChat(params: {
-  messages: Array<{ role: string; content: string }>;
-  snippet: SnippetWithTags;
+  messages: ChatMessage[];
+  snippet: ChatSnippet;
   mode: ChatMode;
   model: string;
 }) {
   const { snippet, messages, mode, model } = params;
-  const prompt = [
-    "You are a senior software engineer helping improve code snippets.",
-    "Give concrete fixes and include full updated code when an edit is requested.",
-    MODE_INSTRUCTION[mode],
-    "",
-    `Snippet title: ${snippet.title}`,
-    `Language: ${snippet.language}`,
-    `Description: ${snippet.description || ""}`,
-    "Current code:",
-    "```",
-    snippet.code,
-    "```",
-    "",
-    "Conversation:",
-    messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n"),
-  ].join("\n");
+  const prompt = normalizeMessages({ messages, snippet, mode })
+    .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+    .join("\n\n");
 
   try {
     await loadPuter();

@@ -1,4 +1,4 @@
-import { CHAT_MODES } from "#lib/ai/chat-config.ts";
+import { CHAT_MODES } from "#lib/ai/chat-types.ts";
 import { CODE_THEMES } from "#lib/code-highlight.ts";
 import { SETTINGS_KEYS } from "#lib/settings.ts";
 

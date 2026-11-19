@@ -3,11 +3,10 @@ import { ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY }
 import { normalizeMessages } from "#lib/ai/chat-normalize.ts";
 import { providers } from "#lib/ai/providers/index.ts";
 import { validateAiBaseUrl } from "#lib/ai/url-security.ts";
-import type { ChatMode, ChatRequestBody } from "#lib/ai/chat-types.ts";
+import { CHAT_MODES, type ChatRequestBody } from "#lib/ai/chat-types.ts";
 import { authenticate } from "#lib/server/supabase.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const ALLOWED_MODES: ChatMode[] = ["improve", "refactor", "debug", "explain"];
 const LIMITS = {
   minute: { window: 60, max: 24 },
   day: { window: 86_400, max: 100 },
@@ -19,6 +18,8 @@ const SERVER_KEYS: Partial<Record<ChatRequestBody["provider"], string | undefine
   gemini: GEMINI_API_KEY,
   openrouter: OPENROUTER_API_KEY,
 };
+
+export const GET: RequestHandler = () => json({ serverKeys: Object.keys(SERVER_KEYS).filter((id) => SERVER_KEYS[id as keyof typeof SERVER_KEYS]) });
 
 async function consumeRateLimit(client: SupabaseClient, bucket: keyof typeof LIMITS) {
   const { window, max } = LIMITS[bucket];
@@ -54,7 +55,7 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     const mode = body.mode ?? "improve";
-    if (!ALLOWED_MODES.includes(mode)) {
+    if (!CHAT_MODES.includes(mode)) {
       return json({ error: "invalid mode" }, { status: 400 });
     }
 
@@ -74,7 +75,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
     const ownKey = body.apiKey?.trim() ?? "";
     const resolvedApiKey = ownKey || SERVER_KEYS[body.provider]?.trim() || "";
-    if (provider.requiresApiKey && !resolvedApiKey) {
+    if (!resolvedApiKey) {
       return json({ error: "api key is required for this provider" }, { status: 400 });
     }
 

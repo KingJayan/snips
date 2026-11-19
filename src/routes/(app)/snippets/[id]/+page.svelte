@@ -228,9 +228,10 @@
       {#if !aiMinimized}
         <div class="h-[50vh] min-h-[320px] overflow-hidden sm:h-[56vh] sm:min-h-[420px] lg:h-[62vh] lg:max-h-[780px] lg:min-h-[520px] xl:sticky xl:top-24" transition:fly={{ y: 8, duration: 240 }}>
           <AiChat
-            snippet={current}
+            snippet={editing ? editing.draft : current}
             onMinimize={() => (aiOverride = true)}
             onApplyCode={(code) => {
+              if (editing && editing.draft.code !== current.code && !confirm("replace your edited code with the ai suggestion?")) return;
               toast("ai suggestion loaded into editor", "success");
               if (editing) editing.draft.code = code;
               else startEditing(code);

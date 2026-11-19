@@ -1,5 +1,5 @@
 import { readStringSetting, SETTINGS_KEYS } from "#lib/settings.ts";
-import type { ChatMessage, ChatMode, ChatProvider, ChatSnippet } from "#lib/ai/chat-types.ts";
+import { CHAT_MODES, type ChatMessage, type ChatMode, type ChatProvider, type ChatSnippet } from "#lib/ai/chat-types.ts";
 import { supabase } from "#lib/supabase.ts";
 
 export type ProviderId = ChatProvider | "puterjs";
@@ -21,8 +21,6 @@ export const PROVIDERS: ProviderOption[] = [
   { id: "openai-compatible", label: "openai-compatible (custom)", description: "any endpoint that supports /chat/completions.", models: ["llama-3.1-70b-instruct", "mistral-large-latest", "gpt-4.1-mini"], requiresApiKey: true, supportsBaseUrl: true },
   { id: "puterjs", label: "puterjs ai", description: "use puterjs browser ai models.", models: ["gpt-4.1-mini", "gpt-4o-mini"], requiresApiKey: false, supportsBaseUrl: false },
 ];
-
-export const CHAT_MODES: ChatMode[] = ["improve", "refactor", "debug", "explain"];
 
 export const providerById = (id: string) => PROVIDERS.find((p) => p.id === id) ?? PROVIDERS[0];
 
@@ -50,7 +48,6 @@ export function readChatConfig(): ChatConfig {
 export function writeChatConfig({ provider, model, mode, apiKey, baseUrl }: ChatConfig) {
   try {
     localStorage.setItem(SETTINGS_KEYS.aiDefaultMode, mode);
-    localStorage.removeItem("snips.ai.apiKey");
     localStorage.setItem(KEYS.provider, provider);
     localStorage.setItem(KEYS.model, model);
     localStorage.setItem(KEYS.baseUrl, baseUrl);
@@ -59,6 +56,16 @@ export function writeChatConfig({ provider, model, mode, apiKey, baseUrl }: Chat
   } catch {
     return;
   }
+}
+
+let serverKeys: Promise<string[]> | null = null;
+
+export function fetchServerKeys() {
+  serverKeys ??= fetch("/api/ai/chat")
+    .then((response) => response.json())
+    .then((payload: { serverKeys?: string[] }) => payload.serverKeys ?? [])
+    .catch(() => []);
+  return serverKeys;
 }
 
 export async function postChat(config: ChatConfig, messages: ChatMessage[], snippet: ChatSnippet) {

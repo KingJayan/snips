@@ -1,8 +1,9 @@
 <script lang="ts">
   import { Bot, KeyRound, LoaderCircle, PanelRightClose, Send, Sparkles, Wand } from "@lucide/svelte";
-  import { CHAT_MODES, PROVIDERS, postChat, providerById, readChatConfig, writeChatConfig, type ProviderId } from "#lib/ai/chat-config.ts";
+  import { onMount } from "svelte";
+  import { PROVIDERS, fetchServerKeys, postChat, providerById, readChatConfig, writeChatConfig, type ProviderId } from "#lib/ai/chat-config.ts";
+  import { CHAT_MODES, type ChatSnippet } from "#lib/ai/chat-types.ts";
   import { PUTER_AUTH_ERROR, puterChat } from "#lib/ai/puter.ts";
-  import type { SnippetWithTags } from "#lib/types.ts";
   import Button from "./ui/Button.svelte";
   import Input from "./ui/Input.svelte";
   import Select from "./ui/Select.svelte";
@@ -10,7 +11,7 @@
   import ErrorNote from "./ErrorNote.svelte";
 
   type Message = { role: "user" | "assistant"; content: string };
-  type Props = { snippet: SnippetWithTags; onApplyCode: (code: string) => void; onMinimize: () => void };
+  type Props = { snippet: ChatSnippet; onApplyCode: (code: string) => void; onMinimize: () => void };
 
   let { snippet, onApplyCode, onMinimize }: Props = $props();
 
@@ -25,6 +26,11 @@
   let loading = $state(false);
   let error = $state<string | null>(null);
   let puterBlocked = $state(false);
+  let serverKeys = $state<string[]>([]);
+
+  const needsKey = $derived(provider.requiresApiKey && !config.apiKey.trim() && !serverKeys.includes(config.provider));
+
+  onMount(() => void fetchServerKeys().then((keys) => (serverKeys = keys)));
 
   const suggestedCode = $derived(
     messages.findLast((m) => m.role === "assistant")?.content.match(/```[\w-]*\n([\s\S]*?)```/)?.[1]?.trim() ?? null
@@ -48,7 +54,7 @@
   async function send() {
     const text = prompt.trim();
     if (!text || loading) return;
-    if (provider.requiresApiKey && !config.apiKey.trim()) return (error = "api key is required for this provider");
+    if (needsKey) return (error = "api key is required for this provider");
     if (!config.model.trim()) return (error = "model is required");
     if (config.provider === "puterjs" && puterBlocked) return (error = PUTER_AUTH_ERROR);
 
@@ -116,7 +122,7 @@
     {#if provider.requiresApiKey}
       <label class="flex flex-col gap-1">
         <span class="flex items-center gap-1 text-xs text-muted-foreground"><KeyRound class="size-3" /> api key (tab session only)</span>
-        <Input type="password" bind:value={config.apiKey} placeholder="paste your api key" class="h-8 text-xs" />
+        <Input type="password" bind:value={config.apiKey} placeholder={serverKeys.includes(config.provider) ? "optional, uses the built-in daily quota" : "paste your api key"} class="h-8 text-xs" />
       </label>
     {/if}
 
@@ -136,7 +142,7 @@
         <pre class="font-sans whitespace-pre-wrap">{message.content}</pre>
       </article>
     {:else}
-      <div class="rounded-lg border border-dashed border-border/70 bg-background/40 p-3 text-xs text-muted-foreground">{provider.requiresApiKey && !config.apiKey.trim() ? "add an api key above to start." : "ask for refactors, bug fixes, tests, or performance edits."}</div>
+      <div class="rounded-lg border border-dashed border-border/70 bg-background/40 p-3 text-xs text-muted-foreground">{needsKey ? "add an api key above to start." : "ask for refactors, bug fixes, tests, or performance edits."}</div>
     {/each}
   </div>
 
