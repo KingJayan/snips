@@ -14,13 +14,14 @@
   import SnippetFields from "#lib/components/SnippetFields.svelte";
   import SnippetMeta from "#lib/components/SnippetMeta.svelte";
   import Button from "#lib/components/ui/Button.svelte";
+  import Select from "#lib/components/ui/Select.svelte";
   import { boolSetting, SETTINGS_KEYS } from "#lib/settings.ts";
   import { readCachedSnippet, writeCachedSnippet } from "#lib/snippet-cache.ts";
   import { draftChanged, toDraft, validateDraft } from "#lib/snippet-draft.ts";
-  import { deleteSnippet, getSnippetById, incrementSnippetCounter, togglePinSnippet, togglePublicSnippet, updateSnippet } from "#lib/snippet-service.ts";
+  import { deleteSnippet, getSnippetById, incrementSnippetCounter, listWorkspaces, moveSnippetToWorkspace, togglePinSnippet, togglePublicSnippet, updateSnippet } from "#lib/snippet-service.ts";
   import { getCurrentUser } from "#lib/supabase.ts";
   import { toast } from "#lib/toast.svelte.ts";
-  import type { ServiceResult, SnippetDraft, SnippetWithTags } from "#lib/types.ts";
+  import type { ServiceResult, SnippetDraft, SnippetWithTags, Workspace } from "#lib/types.ts";
   import { ignoresShortcuts } from "#lib/utils.ts";
 
   const TOGGLE = "text-muted-foreground aria-pressed:bg-accent aria-pressed:text-foreground";
@@ -38,6 +39,9 @@
   let editing = $state<{ draft: SnippetDraft; tags: string; error: string | null; saving: boolean } | null>(null);
   let aiOverride = $state<boolean | null>(null);
   let actions = $state<ReturnType<typeof SnippetActions>>();
+  let workspaces = $state<Workspace[]>([]);
+
+  listWorkspaces().then(({ data }) => (workspaces = data ?? []));
 
   const aiMinimized = $derived(aiOverride ?? !aiDefault.value);
   const dirty = $derived(Boolean(editing && snippet && draftChanged(editing.draft, editing.tags, toDraft(snippet))));
@@ -97,6 +101,9 @@
 
   const togglePublic = (s: SnippetWithTags) =>
     mutate(s.public ? "making private..." : "making public...", togglePublicSnippet(s.id, !s.public), s.public ? "snippet is now private" : "snippet is now public", { public: !s.public });
+
+  const move = (s: SnippetWithTags, workspaceId: string) =>
+    mutate("moving...", moveSnippetToWorkspace(s.id, workspaceId), "moved", { workspace_id: workspaceId });
 
   async function share(s: SnippetWithTags) {
     const url = `${location.origin}/${s.public ? "public" : "snippets"}/${s.id}`;
@@ -202,6 +209,12 @@
         <SnippetFields bind:draft={editing.draft} bind:tagsInput={editing.tags} bind:error={editing.error} disabled={editing.saving} />
       {:else}
         <SnippetMeta snippet={current} status={refreshing ? "refreshing..." : undefined}>
+          {#if workspaces.length > 1}
+            <label class="flex items-center gap-2 text-xs text-muted-foreground">
+              workspace
+              <Select value={current.workspace_id} options={workspaces.map((w) => ({ value: w.id, label: w.name }))} onchange={(e) => move(current, e.currentTarget.value)} class="h-8 w-auto text-xs" />
+            </label>
+          {/if}
           <ErrorNote message={actionError} />
         </SnippetMeta>
       {/if}
