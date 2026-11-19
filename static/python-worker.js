@@ -8,16 +8,14 @@ ready.then(
 
 self.onmessage = async ({ data }) => {
   const pyodide = await ready;
-  let stdout = "";
-  let stderr = "";
-  pyodide.setStdout({ batched: (text) => (stdout += `${text}\n`) });
-  pyodide.setStderr({ batched: (text) => (stderr += `${text}\n`) });
+  pyodide.setStdout({ batched: (text) => self.postMessage({ stdout: `${text}\n` }) });
+  pyodide.setStderr({ batched: (text) => self.postMessage({ stderr: `${text}\n` }) });
   try {
     pyodide.globals.set("__stdin", data.stdin ?? "");
     await pyodide.runPythonAsync("import io, sys\nsys.stdin = io.StringIO(__stdin)");
     await pyodide.runPythonAsync(data.code);
   } catch (error) {
-    stderr += String(error?.message ?? error);
+    self.postMessage({ stderr: String(error?.message ?? error) });
   }
-  self.postMessage({ stdout, stderr });
+  self.postMessage({ done: true });
 };

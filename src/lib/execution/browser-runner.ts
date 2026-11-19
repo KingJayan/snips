@@ -24,15 +24,21 @@ export async function runPython(code: string, stdin = ""): Promise<RunResult> {
   const target = await worker;
   const startedAt = performance.now();
 
+  const result = { stdout: "", stderr: "", runtimeMs: 0 };
+
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       target.terminate();
       worker = null;
-      resolve({ stdout: "", stderr: `stopped after ${RUN_TIMEOUT_MS / 1000}s`, runtimeMs: RUN_TIMEOUT_MS });
+      result.stderr += `stopped after ${RUN_TIMEOUT_MS / 1000}s`;
+      resolve({ ...result, runtimeMs: RUN_TIMEOUT_MS });
     }, RUN_TIMEOUT_MS);
     target.onmessage = ({ data }) => {
+      result.stdout += data.stdout ?? "";
+      result.stderr += data.stderr ?? "";
+      if (!data.done) return;
       clearTimeout(timer);
-      resolve({ stdout: data.stdout, stderr: data.stderr, runtimeMs: Math.round(performance.now() - startedAt) });
+      resolve({ ...result, runtimeMs: Math.round(performance.now() - startedAt) });
     };
     target.postMessage({ code, stdin });
   });
