@@ -19,7 +19,7 @@ const cache = new Map<string, string>();
 const MAX_ENTRIES = 120;
 
 export function cacheKey(code: string, language: string, theme: string) {
-  return `${theme}:${language}:${code.length}:${code.slice(0, 120)}:${code.slice(-120)}`;
+  return `${theme}:${language}:${code}`;
 }
 
 export const cachedHighlight = (key: string) => cache.get(key) ?? null;
