@@ -15,7 +15,7 @@ type TagLinks = {
   }>;
 };
 
-const MAX_LIST_ITEMS = 200;
+export const PAGE_SIZE = 100;
 const SUMMARY_COLUMNS =
   "id, user_id, workspace_id, title, language, description, pinned, public, view_count, copy_count, created_at, updated_at, snippet_tags(tags(id, name))";
 const SNIPPET_COLUMNS =
@@ -25,7 +25,7 @@ const NOT_FOUND = "snippet not found";
 
 type ListSnippetsOptions = {
   signal?: AbortSignal;
-  limit?: number;
+  offset?: number;
   workspaceId?: string;
 };
 
@@ -254,7 +254,7 @@ export async function listSnippets(
       .eq("user_id", userId)
       .order("pinned", { ascending: false })
       .order("updated_at", { ascending: false })
-      .limit(listLimit(options));
+      .range(options?.offset ?? 0, (options?.offset ?? 0) + PAGE_SIZE - 1);
 
     if (options?.workspaceId) {
       query = query.eq("workspace_id", options.workspaceId);
@@ -274,12 +274,6 @@ export async function listSnippets(
   } catch (error) {
     return withError<SnippetSummaryWithTags[]>(error);
   }
-}
-
-function listLimit(options?: ListSnippetsOptions) {
-  return typeof options?.limit === "number" && options.limit > 0
-    ? Math.min(options.limit, MAX_LIST_ITEMS)
-    : MAX_LIST_ITEMS;
 }
 
 async function fetchSnippet(id: string, options?: GetSnippetOptions & { table?: SnippetTable }) {
@@ -463,7 +457,7 @@ export async function listPublicSnippets(
       .from("public_snippets")
       .select(SUMMARY_COLUMNS)
       .order("updated_at", { ascending: false })
-      .limit(listLimit(options));
+      .range(options?.offset ?? 0, (options?.offset ?? 0) + PAGE_SIZE - 1);
 
     if (options?.workspaceId) {
       query = query.eq("workspace_id", options.workspaceId);

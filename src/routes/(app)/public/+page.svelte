@@ -3,14 +3,16 @@
   import AppHeader from "#lib/components/AppHeader.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
   import SnippetCard from "#lib/components/SnippetCard.svelte";
+  import Button from "#lib/components/ui/Button.svelte";
   import TagFilter from "#lib/components/TagFilter.svelte";
   import { collectTags, filterSnippets } from "#lib/search.ts";
-  import { getPublicWorkspaceName, listPublicSnippets } from "#lib/snippet-service.ts";
+  import { getPublicWorkspaceName, listPublicSnippets, PAGE_SIZE } from "#lib/snippet-service.ts";
   import { toast } from "#lib/toast.svelte.ts";
   import type { SnippetSummaryWithTags } from "#lib/types.ts";
 
   let snippets = $state<SnippetSummaryWithTags[]>([]);
   let loading = $state(true);
+  let hasMore = $state(false);
   let search = $state("");
   let activeTag = $state<string | null>(null);
   let workspaceName = $state<string | null>(null);
@@ -31,9 +33,17 @@
       loading = false;
       if (error) toast(error, "error");
       snippets = data ?? [];
+      hasMore = data?.length === PAGE_SIZE;
     });
     return () => controller.abort();
   });
+
+  async function loadMore() {
+    const { data, error } = await listPublicSnippets({ workspaceId: workspaceId ?? undefined, offset: snippets.length });
+    if (error) return void toast(error, "error");
+    snippets = [...snippets, ...(data ?? [])];
+    hasMore = data?.length === PAGE_SIZE;
+  }
 
   function onKeydown(event: KeyboardEvent) {
     if (event.key !== "Escape") return;
@@ -74,6 +84,9 @@
           <SnippetCard {snippet} basePath="/public" onTagClick={(tag) => (activeTag = tag)} />
         {/each}
       </div>
+    {/if}
+    {#if hasMore && !loading}
+      <div class="flex justify-center"><Button variant="outline" onclick={loadMore}>load more</Button></div>
     {/if}
   </main>
 

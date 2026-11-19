@@ -7,6 +7,7 @@ const service = vi.hoisted(() => ({
   createWorkspace: vi.fn(),
   listSnippets: vi.fn(),
   createSnippet: vi.fn(),
+  PAGE_SIZE: 100,
 }));
 
 vi.mock("#lib/snippet-service.ts", () => service);

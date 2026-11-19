@@ -7,6 +7,7 @@ import {
   listSnippets,
   listWorkspaces,
   moveSnippetToWorkspace,
+  PAGE_SIZE,
   renameWorkspace,
   togglePinSnippet,
   toggleWorkspacePublic,
@@ -27,6 +28,7 @@ export class Library {
   authenticated = $state(false);
   loading = $state(true);
   refreshing = $state(false);
+  hasMore = $state(false);
   busy = $state(false);
   error = $state<string | null>(null);
 
@@ -71,8 +73,18 @@ export class Library {
     const { data, error } = await listSnippets({ workspaceId: id, signal: controller.signal });
     if (controller.signal.aborted) return;
 
-    Object.assign(this, { loading: false, refreshing: false, error });
+    Object.assign(this, { loading: false, refreshing: false, error, hasMore: data?.length === PAGE_SIZE });
     this.#setSnippets(error ? [] : (data ?? []));
+  }
+
+  async loadMore() {
+    const id = this.activeId;
+    if (!id) return;
+    const { data, error } = await listSnippets({ workspaceId: id, offset: this.snippets.length });
+    if (error) return void toast(error, "error");
+    if (!data || id !== this.activeId) return;
+    this.hasMore = data.length === PAGE_SIZE;
+    this.#setSnippets([...this.snippets, ...data]);
   }
 
   dispose() {

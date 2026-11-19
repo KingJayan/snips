@@ -225,6 +225,9 @@
           onDragEnd={() => (dragging = null)}
         />
       {/if}
+      {#if library.hasMore && !library.loading}
+        <Button variant="outline" class="self-center" onclick={() => library.loadMore()}>load more</Button>
+      {/if}
     </main>
   </div>
 {/if}
